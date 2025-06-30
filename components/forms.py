@@ -23,7 +23,7 @@ def exibir_formulario():
     # Inicializa reagentes como DataFrame
     if "reagentes" not in st.session_state or isinstance(st.session_state.reagentes, list):
         st.session_state.reagentes = pd.DataFrame(columns=[
-            "nome", "componentes", "preparo", "validade",
+            "nome", "componentes", "preparo",
             "responsavel", "local", "arquivo_nome",
             "arquivo_bytes", "arquivo_link"
         ])
@@ -32,7 +32,7 @@ def exibir_formulario():
     if "dados" not in st.session_state or isinstance(st.session_state.dados, list):
         st.session_state.dados = pd.DataFrame(columns=[
             "id","nome","grupo","categoria","versao",
-            "data","validade","autor","email","departamento",
+            "data","autor","email","departamento",
             "cargo","reagentes","arquivo_nome","arquivo_bytes",
             "arquivo_link","historico","referencia","comentarios"
         ])
@@ -47,7 +47,6 @@ def exibir_formulario():
             ])
             versao      = st.text_input("Versão", value="1.0")
             data        = st.date_input("Data de Criação", value=datetime.today())
-            validade    = st.date_input("Validade do Protocolo")
             autor       = st.text_input("Nome do Autor")
             email       = st.text_input("E-mail")  # não upper()
             departamento= st.text_input("Departamento")
