@@ -70,7 +70,7 @@ def exibir_protocolos():
                                 f.write(row["arquivo_bytes"])
                             st.markdown(f"[📎 Visualizar PDF]({tmp})", unsafe_allow_html=True)
                         else:
-                            st.info("Nenhum PDF anexado.  \n**ADICIONAR UM PDF FICTÍCIO NO DEMO_PROTOCOLS**")
+                            st.info("Nenhum PDF anexado")
 
                         # Info gerais
                         st.markdown("### 📦 Informações Gerais")
