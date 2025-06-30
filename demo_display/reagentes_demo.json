@@ -50,4 +50,46 @@
   "local": "ESTANTE QUÍMICA 2",
   "comentarios": []
 }
+,
+  [
+  {
+    "nome": "PBS",
+    "componentes": "NaCl – 137 mM",
+    "preparo_nome": "preparo_pbs.pdf",
+    "preparo_bytes": null,
+    "validade": "2025-09-10",
+    "responsavel": "ROBERTO COSTA",
+    "local": "BANCADA CULTIVO",
+    "comentarios": []
+  },
+  {
+    "nome": "B27",
+    "componentes": "Suplemento B27",
+    "preparo_nome": null,
+    "preparo_bytes": null,
+    "validade": "2025-12-31",
+    "responsavel": "LABTRACK",
+    "local": "Gaveta de Cultura Celular",
+    "comentarios": []
+  },
+  {
+    "nome": "FGF",
+    "componentes": "Fator de Crescimento FGF",
+    "preparo_nome": null,
+    "preparo_bytes": null,
+    "validade": "2025-12-31",
+    "responsavel": "LABTRACK",
+    "local": "Câmara 4 °C",
+    "comentarios": []
+  },
+  {
+    "nome": "EGF",
+    "componentes": "Fator de Crescimento EGF",
+    "preparo_nome": null,
+    "preparo_bytes": null,
+    "validade": "2025-12-31",
+    "responsavel": "LABTRACK",
+    "local": "Câmara 4 °C",
+    "comentarios": []
+  }
 ]
