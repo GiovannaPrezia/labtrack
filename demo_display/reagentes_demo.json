@@ -1,17 +1,53 @@
 [
   {
-    "nome": "TRIzol",
-    "tipo": "Reagente",
-    "localizacao": "Freezer -80ºC"
+    "nome": "PBS",
+    "componentes": "NaCl – 137 mM",
+    "preparo_nome": "preparo_pbs.pdf",
+    "preparo_bytes": null,
+    "validade": "2025-09-10",
+    "responsavel": "ROBERTO COSTA",
+    "local": "BANCADA CULTIVO",
+    "comentarios": []
   },
   {
-    "nome": "Etanol 70%",
-    "tipo": "Solução",
-    "localizacao": "Prateleira B - bancada 2"
+    "nome": "EDTA 0,5M",
+    "componentes": "EDTA – 0,5M",
+    "preparo_nome": "preparo_edta.pdf",
+    "preparo_bytes": null,
+    "validade": "2026-01-01",
+    "responsavel": "CLARA DIAS",
+    "local": "ESTANTE QUÍMICA 1",
+    "comentarios": []
   },
   {
-    "nome": "Chloroform",
-    "tipo": "Reagente",
-    "localizacao": "Capela química"
-  }
+    "nome": "Solução Tampão Acetato",
+    "componentes": "Acetato de sódio – 0,1M, pH 5,0",
+    "preparo_nome": "preparo_acetato.pdf",
+    "preparo_bytes": null,
+    "validade": "2025-11-20",
+    "responsavel": "LUCAS MARTINS",
+    "local": "BANCADA CULTIVO",
+    "comentarios": []
+  },
+{
+  "nome": "Solução Salina",
+  "componentes": "NaCl – 0,9%",
+  "preparo_nome": "preparo_solucao_salina.pdf",
+  "preparo_bytes": null,
+  "validade": "2025-12-31",
+  "responsavel": "MARCOS SILVA",
+  "local": "BANCADA CULTIVO",
+  "comentarios": []
+}
+,
+{
+  "nome": "Tris-HCl",
+  "componentes": "Tris – 10 mM, HCl – pH 7,5",
+  "preparo_nome": "preparo_tris_hcl.pdf",
+  "preparo_bytes": null,
+  "validade": "2026-03-15",
+  "responsavel": "ANA PEREIRA",
+  "local": "ESTANTE QUÍMICA 2",
+  "comentarios": []
+}
 ]
