@@ -21,7 +21,7 @@ if "reagentes" not in st.session_state:
             st.session_state.reagentes = pd.DataFrame(json.load(f))
 
 # ——— Redirecionamento automático por URL ———
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 menu_default = query_params.get("aba", ["📋 Cadastrar Novo Protocolo"])[0]
 
 options = [
@@ -30,7 +30,6 @@ options = [
     "🧬 Lista de Reagentes",
     "📤 Exportar / Backups"
 ]
-# define índice padrão, cai em 0 se não encontrar
 default_idx = options.index(menu_default) if menu_default in options else 0
 
 # Menu lateral
