@@ -1,0 +1,30 @@
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "nome": "Extração de RNA",
+    "grupo": "Biologia Molecular",
+    "categoria": "Extração",
+    "versao": "1.0",
+    "data": "2025-06-01",
+    "validade": "2026-06-01",
+    "autor": "Dra. Maria Silva",
+    "email": "maria.silva@lab.com",
+    "departamento": "Genética",
+    "cargo": "Pesquisadora",
+    "reagentes": ["TRIzol", "Etanol 70%", "Chloroform"],
+    "arquivo_nome": "extracao_rna.pdf",
+    "arquivo_bytes": null,
+    "referencia_autor": "Chomczynski & Sacchi",
+    "referencia_ano": "1987",
+    "referencia_doi": "https://doi.org/10.1006/abio.1987.9999",
+    "comentario_nome": "João",
+    "comentario_lab": "LabRNA",
+    "comentario_texto": "Funcionou bem com células HepG2.",
+    "historico": [
+      {
+        "acao": "criado",
+        "data": "2025-06-01T10:00:00"
+      }
+    ]
+  }
+]
