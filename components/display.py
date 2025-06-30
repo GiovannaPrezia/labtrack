@@ -63,7 +63,7 @@ def exibir_protocolos():
                         st.session_state[key] = not st.session_state[key]
 
                     if st.session_state[key]:
-                        # PDF
+                        # PDF local
                         if row.get("arquivo_bytes"):
                             tmp = f"/tmp/{row['arquivo_nome']}"
                             with open(tmp, "wb") as f:
@@ -71,6 +71,10 @@ def exibir_protocolos():
                             st.markdown(f"[📎 Visualizar PDF]({tmp})", unsafe_allow_html=True)
                         else:
                             st.info("Nenhum PDF anexado")
+
+                        # Link para Drive
+                        if pd.notna(row.get("arquivo_link", None)):
+                            st.markdown(f"[📂 Abrir no Drive]({row['arquivo_link']})", unsafe_allow_html=True)
 
                         # Info gerais
                         st.markdown("### 📦 Informações Gerais")
@@ -96,7 +100,6 @@ def exibir_protocolos():
                             links = []
                             for nome in reag_list:
                                 nome_enc = quote(nome, safe="")
-                                # AQUI: href começa com "/?..."
                                 links.append(
                                     f'<a href="/?aba={aba_enc}&filtro_reagente={nome_enc}" '
                                     f'style="color:#4da6ff; text-decoration:none;">'
@@ -147,3 +150,6 @@ def exibir_protocolos():
                     <div style='font-size:11px;color:#999'>{r['data']} | ID: {r['id']}</div>
                 </div>
             """, unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    exibir_protocolos()
