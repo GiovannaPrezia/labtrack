@@ -20,20 +20,28 @@ if "reagentes" not in st.session_state:
         with open("demo_display/reagentes_demo.json") as f:
             st.session_state.reagentes = pd.DataFrame(json.load(f))
 
-# Menu lateral
-menu = st.sidebar.radio("Menu", [
+# ——— Redirecionamento automático por URL ———
+query_params = st.experimental_get_query_params()
+menu_default = query_params.get("aba", ["📋 Cadastrar Novo Protocolo"])[0]
+
+options = [
     "📋 Cadastrar Novo Protocolo",
     "📄 Protocolos Laboratoriais",
     "🧬 Lista de Reagentes",
     "📤 Exportar / Backups"
-])
+]
+# define índice padrão, cai em 0 se não encontrar
+default_idx = options.index(menu_default) if menu_default in options else 0
+
+# Menu lateral
+menu = st.sidebar.radio("Menu", options, index=default_idx)
 
 # Navegação
-if menu == "📋 Cadastrar Novo Protocolo":
+if menu == options[0]:
     forms.exibir_formulario()
-elif menu == "📄 Protocolos Laboratoriais":
+elif menu == options[1]:
     display.exibir_protocolos()
-elif menu == "🧬 Lista de Reagentes":
+elif menu == options[2]:
     reagentes.exibir_reagentes()
-elif menu == "📤 Exportar / Backups":
+elif menu == options[3]:
     export.exportar_dados()
