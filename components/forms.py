@@ -56,19 +56,19 @@ def exibir_formulario():
             reagentes_usados = st.multiselect("Reagentes Utilizados", opcoes)
 
             st.markdown("### 📑 Protocolo (PDF ou Link)")
-            st.info("Você pode **anexar um PDF** ou **colar um link externo** para visualização.")
+            st.info("Você deve **anexar o PDF ** do protocolo e colar o link externo do **Drive** do Laboratório.")
             arquivo_protocolo = st.file_uploader(
-                "Anexar arquivo PDF",
+                "Anexar protocolo (PDF obrigatório)",
                 type=["pdf"],
                 key="arquivo_protocolo"
             )
-            pdf_link = st.text_input("Ou cole aqui o link externo para o PDF", key="pdf_link")
+            pdf_link = st.text_input("Cole aqui o link externo para o protocolo", key="pdf_link")
 
             st.markdown("### 🔗 Referência do Protocolo")
             ref_autor = st.text_input("Autor da Referência")
             ref_ano   = st.text_input("Ano da Publicação")
             ref_doi   = st.text_input("DOI")
-            ref_link  = st.text_input("Link HTML")
+            ref_link  = st.text_input("Link (HTML)")
 
             st.markdown("### 📎 Anexos Adicionais")
             st.file_uploader(
@@ -135,13 +135,13 @@ def exibir_formulario():
                 unidade   = st.selectbox("Unidade", ["%","mL","µL","mg/mL","g/L","OUTRO"])
 
             st.markdown("### 📑 Protocolo do Reagente (PDF ou Link)")
-            st.info("Você pode **anexar um PDF** ou **colar um link externo**.")
+            st.info("Você deve **anexar o PDF** do protocolo e **colar o link externo do Drive do Laboratório**.")
             arquivo_reagente = st.file_uploader(
                 "Anexar protocolo de preparo (PDF)",
                 type=["pdf"],
                 key="arquivo_reagente"
             )
-            reag_link = st.text_input("Ou link externo para o protocolo do reagente", key="reag_link")
+            reag_link = st.text_input("Link do drive", key="reag_link")
 
             validade_reag = st.date_input("Validade da Solução")
             responsavel   = st.text_input("Responsável pelo Preparo")
