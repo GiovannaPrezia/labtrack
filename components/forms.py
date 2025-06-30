@@ -48,7 +48,7 @@ def exibir_formulario():
             data        = st.date_input("Data de Criação", value=datetime.today())
             validade    = st.date_input("Validade do Protocolo")
             autor       = st.text_input("Nome do Autor")
-            email       = st.text_input("E-mail")
+            email       = st.text_input("E-mail")  # aqui não upper()
             departamento= st.text_input("Departamento")
             cargo       = st.text_input("Cargo")
 
@@ -100,7 +100,7 @@ def exibir_formulario():
                     "data": data.strftime("%Y-%m-%d"),
                     "validade": validade.strftime("%Y-%m-%d"),
                     "autor": autor.upper(),
-                    "email": email.upper(),
+                    "email": email,  # removido upper()
                     "departamento": departamento.upper(),
                     "cargo": cargo.upper(),
                     "reagentes": ", ".join(reagentes_usados),
