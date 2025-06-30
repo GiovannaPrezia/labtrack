@@ -20,7 +20,7 @@ def exibir_formulario():
         "🧪 CADASTRO DE REAGENTE/SOLUÇÃO"
     ])
 
-    # Garantir que reagentes seja DataFrame
+    # Garante que 'reagentes' é um DataFrame
     if "reagentes" not in st.session_state or isinstance(st.session_state.reagentes, list):
         st.session_state.reagentes = pd.DataFrame(columns=[
             "nome", "componentes", "preparo", "validade", "responsavel", "local",
@@ -52,7 +52,8 @@ def exibir_formulario():
             st.info("Carregue o protocolo em **formato PDF** para leitura.")
             arquivo_protocolo = st.file_uploader(
                 "Anexar protocolo (PDF obrigatório)",
-                type=["pdf"]
+                type=["pdf"],
+                key="arquivo_protocolo"
             )
 
             st.markdown("### 🔗 Referência do Protocolo")
@@ -110,18 +111,19 @@ def exibir_formulario():
             with col3:
                 unidade = st.selectbox("Unidade", ["%", "mL", "µL", "mg/mL", "g/L", "outro"])
 
-            st.markdown("### 📑 **Protocolo do reagente (PDF)**")
+            st.markdown("### 📑 Protocolo do reagente (PDF)")
             st.info("Carregue o protocolo do reagente em **formato PDF** para leitura.")
             arquivo_reagente = st.file_uploader(
                 "Anexar protocolo de preparo (PDF obrigatório)",
-                type=["pdf"]
+                type=["pdf"],
+                key="arquivo_reagente"
             )
 
             validade_reag = st.date_input("Validade da Solução")
             responsavel = st.text_input("Responsável pelo Preparo")
             local = st.text_input("Armazenamento/ Localização")
 
-            st.markdown("### 📎 **Anexos Adicionais**")
+            st.markdown("### 📎 Anexos Adicionais")
             st.file_uploader(
                 "Anexar outros arquivos (WORD original obrigatório)",
                 type=["pdf", "png", "jpg", "jpeg", "docx", "txt", "xlsx", "csv"],
