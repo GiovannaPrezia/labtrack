@@ -44,3 +44,4 @@ elif menu == options[2]:
     reagentes.exibir_reagentes()
 elif menu == options[3]:
     export.exportar_dados()
+
