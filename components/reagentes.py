@@ -1,5 +1,5 @@
 import streamlit as st
-from urllib.parse import quote, unquote
+from urllib.parse import quote
 import base64
 import os
 import json
@@ -44,7 +44,7 @@ def exibir_reagentes():
     reagentes = reag_real + reag_demo
 
     # —— Filtro automático via URL ——
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
     filtro = query_params.get("filtro_reagente", [""])[0]
 
     termo = st.text_input("🔍 Buscar reagente por nome", value=filtro)
