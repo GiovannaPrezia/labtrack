@@ -55,8 +55,11 @@ def exibir_formulario():
             opcoes      = st.session_state.reagentes["nome"].tolist() if not st.session_state.reagentes.empty else []
             reagentes_usados = st.multiselect("Reagentes Utilizados", opcoes)
 
-            st.markdown("### 📑 Protocolo (PDF ou Link)")
-            st.info("Você deve **anexar o PDF** do protocolo e colar o link externo do **Drive** do Laboratório.")
+            st.markdown("### 📑 Protocolo (PDF e Link)")
+            st.info(""""
+            Carregue o protocolo em **formato PDF** e cole o link externo do Drive do Laboratório.
+            Caso não seja a Versão 1 do Protocolo, adicione também o arquivo Word em **Anexos Adicionais**.
+            """")
             arquivo_protocolo = st.file_uploader(
                 "Anexar protocolo (PDF obrigatório)",
                 type=["pdf"],
