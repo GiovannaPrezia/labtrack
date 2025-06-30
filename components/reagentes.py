@@ -9,107 +9,104 @@ def exibir_reagentes():
     st.title("🧬 Lista de Reagentes e Soluções")
     st.markdown("Visualize reagentes já cadastrados ou adicione novos no menu lateral.")
 
-    # Carrega demo de reagentes, se existir
+    # Carrega demo de reagentes
     demo_path = "demo_display/reagentes_demo.json"
     if "reagentes_demo" not in st.session_state:
         if os.path.exists(demo_path):
-            try:
-                with open(demo_path, "r", encoding="utf-8") as f:
-                    reag_demo = json.load(f)
-                for r in reag_demo:
-                    r["demo"] = True
-                    r.setdefault("comentarios", [])
-                st.session_state.reagentes_demo = reag_demo
-            except Exception:
-                st.session_state.reagentes_demo = []
+            with open(demo_path, "r", encoding="utf-8") as f:
+                reag_demo = json.load(f)
+            for r in reag_demo:
+                r["demo"] = True
+                r.setdefault("comentarios", [])
+            st.session_state.reagentes_demo = reag_demo
         else:
             st.session_state.reagentes_demo = []
 
-    # Garante lista real de reagentes
+    # Lista real
     if "reagentes" not in st.session_state:
         st.session_state.reagentes = []
 
-    # Converte DataFrame para lista de dicts, se necessário
+    # Converte DataFrame → list(dict)
     reag_real = st.session_state.reagentes
     if isinstance(reag_real, pd.DataFrame):
-        reag_real = reag_real.to_dict(orient="records")
+        reag_real = reag_real.to_dict("records")
     reag_demo = st.session_state.reagentes_demo
     if isinstance(reag_demo, pd.DataFrame):
-        reag_demo = reag_demo.to_dict(orient="records")
+        reag_demo = reag_demo.to_dict("records")
 
-    # Previne duplicatas pelo nome
-    combined = reag_real + reag_demo
+    # Remove duplicatas pelo nome
     seen = set()
     reagentes = []
-    for r in combined:
+    for r in reag_real + reag_demo:
         if r["nome"] not in seen:
             seen.add(r["nome"])
             reagentes.append(r)
 
-    # Filtro automático
+    # Filtro
     filtro = st.query_params.get("filtro_reagente", [""])[0]
     termo  = st.text_input("🔍 Buscar reagente por nome", value=filtro)
     if termo:
         reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
 
     for idx, r in enumerate(reagentes):
-        expand_key = f"reag_expand_{idx}"
-        if expand_key not in st.session_state:
-            st.session_state[expand_key] = False
+        exp = f"reag_expand_{idx}"
+        if exp not in st.session_state:
+            st.session_state[exp] = False
 
-        button_key = f"reag_btn_{idx}"
+        btn = f"reag_btn_{idx}"
         with st.container():
-            # cartão
+            # Cartão
             st.markdown(
-                f"<div style='border:1px solid #666; border-radius:10px; "
-                f"padding:10px; margin-bottom:15px; background-color:#111;'>"
-                f"<strong>📘 {r['nome']}</strong><br>"
-                f"<span style='font-size:13px;'>Validade: {r.get('validade','N/A')}</span>"
-                f"</div>",
-                unsafe_allow_html=True
+              f"<div style='border:1px solid #666; border-radius:8px; padding:8px; "
+              f"margin-bottom:12px; background:#111;'>"
+              f"<strong>📘 {r['nome']}</strong><br>"
+              f"<span style='font-size:13px;'>Validade: {r.get('validade','N/A')}</span>"
+              f"</div>", unsafe_allow_html=True
             )
 
-            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=button_key):
-                st.session_state[expand_key] = not st.session_state[expand_key]
+            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=btn):
+                st.session_state[exp] = not st.session_state[exp]
 
-            if st.session_state[expand_key]:
-                # Informações gerais
+            if st.session_state[exp]:
+                # Info gerais
                 st.markdown("#### 📦 Informações do Reagente")
-                st.write(f"👤 **Responsável**: {r.get('responsavel','Desconhecido')}")
-                st.write(f"📍 **Local**: {r.get('local','Desconhecido')}")
-                st.write(f"🧪 **Componentes**: {r.get('componentes','N/A')}")
+                st.write(f"👤 **Responsável**: {r.get('responsavel','-')}")
+                st.write(f"📍 **Local**: {r.get('local','-')}")
+                st.write(f"🧪 **Componentes**: {r.get('componentes','-')}")
 
-                # PDF de preparo
-                arquivo_bytes = r.get("arquivo_bytes")
-                arquivo_nome  = r.get("arquivo_nome")
-                if arquivo_bytes:
-                    if isinstance(arquivo_bytes, str):
-                        b64 = arquivo_bytes
-                    else:
-                        b64 = base64.b64encode(arquivo_bytes).decode()
+                # PDF embutido
+                pb = r.get("arquivo_bytes")
+                pn = r.get("arquivo_nome")
+                if pb:
+                    b64 = pb if isinstance(pb, str) else base64.b64encode(pb).decode()
                     href = (
-                        f'<a href="data:application/pdf;base64,{b64}" target="_blank">'
-                        f"📄 Visualizar PDF ({arquivo_nome})</a>"
+                      f'<a href="data:application/pdf;base64,{b64}" target="_blank">'
+                      f"📄 Ver PDF ({pn})</a>"
                     )
                     st.markdown(href, unsafe_allow_html=True)
+
+                # Link externo, se houver
+                link_ext = r.get("arquivo_link")
+                if link_ext:
+                    st.markdown(f"[📂 Abrir link]({link_ext})", unsafe_allow_html=True)
 
                 # Comentários
                 st.markdown("### 💬 Comentários")
                 for c in r.get("comentarios", []):
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
-                # Formulário para novo comentário
+                # Form para novo comentário
                 if not r.get("demo"):
                     with st.form(f"form_coment_{idx}"):
                         nome  = st.text_input("Seu Nome", key=f"nome_{idx}")
                         lab   = st.text_input("Laboratório", key=f"lab_{idx}")
-                        texto = st.text_area("Comentário", key=f"coment_{idx}")
+                        texto = st.text_area("Comentário",   key=f"coment_{idx}")
                         enviar = st.form_submit_button("💬 Adicionar Comentário")
                         if enviar and nome and texto:
                             novo = {"nome": nome, "lab": lab, "texto": texto}
-                            offset = len(st.session_state.reagentes_demo)
-                            i_real = idx - offset
-                            if 0 <= i_real < len(st.session_state.reagentes):
-                                st.session_state.reagentes[i_real].setdefault("comentarios", []).append(novo)
+                            off = len(st.session_state.reagentes_demo)
+                            real_i = idx - off
+                            if 0 <= real_i < len(st.session_state.reagentes):
+                                st.session_state.reagentes[real_i].setdefault("comentarios", []).append(novo)
                                 st.success("Comentário adicionado!")
                                 st.rerun()
