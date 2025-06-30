@@ -37,9 +37,16 @@ def exibir_reagentes():
     if isinstance(reag_demo, pd.DataFrame):
         reag_demo = reag_demo.to_dict(orient="records")
 
-    reagentes = reag_real + reag_demo
+    # Previne duplicatas pelo nome
+    combined = reag_real + reag_demo
+    seen = set()
+    reagentes = []
+    for r in combined:
+        if r["nome"] not in seen:
+            seen.add(r["nome"])
+            reagentes.append(r)
 
-    # Filtro automático via st.query_params
+    # Filtro automático
     filtro = st.query_params.get("filtro_reagente", [""])[0]
     termo  = st.text_input("🔍 Buscar reagente por nome", value=filtro)
     if termo:
@@ -52,9 +59,9 @@ def exibir_reagentes():
 
         button_key = f"reag_btn_{idx}"
         with st.container():
-            # Cartão resumido
+            # cartão
             st.markdown(
-                f"<div style='border:1px solid #666; border-radius:10px;"
+                f"<div style='border:1px solid #666; border-radius:10px; "
                 f"padding:10px; margin-bottom:15px; background-color:#111;'>"
                 f"<strong>📘 {r['nome']}</strong><br>"
                 f"<span style='font-size:13px;'>Validade: {r.get('validade','N/A')}</span>"
@@ -62,18 +69,17 @@ def exibir_reagentes():
                 unsafe_allow_html=True
             )
 
-            # Botão de detalhes
             if st.button(f"🔍 Ver detalhes de {r['nome']}", key=button_key):
                 st.session_state[expand_key] = not st.session_state[expand_key]
 
-            # Se expandido, mostra detalhes
             if st.session_state[expand_key]:
+                # Informações gerais
                 st.markdown("#### 📦 Informações do Reagente")
                 st.write(f"👤 **Responsável**: {r.get('responsavel','Desconhecido')}")
                 st.write(f"📍 **Local**: {r.get('local','Desconhecido')}")
                 st.write(f"🧪 **Componentes**: {r.get('componentes','N/A')}")
 
-                # Link para PDF de preparo, se existir
+                # PDF de preparo
                 arquivo_bytes = r.get("arquivo_bytes")
                 arquivo_nome  = r.get("arquivo_nome")
                 if arquivo_bytes:
@@ -88,11 +94,11 @@ def exibir_reagentes():
                     st.markdown(href, unsafe_allow_html=True)
 
                 # Comentários
-                st.markdown("##### 💬 Comentários")
+                st.markdown("### 💬 Comentários")
                 for c in r.get("comentarios", []):
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
-                # Form para adicionar comentário a reagentes não-demo
+                # Formulário para novo comentário
                 if not r.get("demo"):
                     with st.form(f"form_coment_{idx}"):
                         nome  = st.text_input("Seu Nome", key=f"nome_{idx}")
@@ -106,5 +112,4 @@ def exibir_reagentes():
                             if 0 <= i_real < len(st.session_state.reagentes):
                                 st.session_state.reagentes[i_real].setdefault("comentarios", []).append(novo)
                                 st.success("Comentário adicionado!")
-                                st.rerun()  # substitui experimental_rerun
-
+                                st.rerun()
