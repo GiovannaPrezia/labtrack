@@ -2,7 +2,6 @@ import streamlit as st
 from datetime import datetime
 import uuid
 import pandas as pd
-import base64  # para codificar o PDF em base64
 
 def exibir_formulario():
     st.header("📋 Cadastrar Novo Protocolo")
@@ -28,6 +27,15 @@ def exibir_formulario():
             "arquivo_nome", "arquivo_bytes", "arquivo_link"
         ])
 
+    # Inicializa dados de protocolos se ainda não existir
+    if "dados" not in st.session_state or isinstance(st.session_state.dados, list):
+        st.session_state.dados = pd.DataFrame(columns=[
+            "id","nome","grupo","categoria","versao","data","validade",
+            "autor","email","departamento","cargo","reagentes",
+            "arquivo_nome","arquivo_bytes","arquivo_link",
+            "historico","referencia","comentarios"
+        ])
+
     with aba_protocolo:
         with st.form("form_protocolo"):
             nome        = st.text_input("Nome do Protocolo")
@@ -44,18 +52,17 @@ def exibir_formulario():
             departamento= st.text_input("Departamento")
             cargo       = st.text_input("Cargo")
 
-            # multiselect de reagentes pré-cadastrados
             opcoes      = st.session_state.reagentes["nome"].tolist() if not st.session_state.reagentes.empty else []
             reagentes_usados = st.multiselect("Reagentes Utilizados", opcoes)
 
-            st.markdown("### 📑 Protocolo")
-            st.info("Carregue o protocolo em **formato PDF** ou insira link externo.")
+            st.markdown("### 📑 Protocolo (PDF ou Link)")
+            st.info("Você pode **anexar um PDF** ou **colar um link externo** para visualização.")
             arquivo_protocolo = st.file_uploader(
-                "Anexar protocolo (PDF)",
+                "Anexar arquivo PDF",
                 type=["pdf"],
                 key="arquivo_protocolo"
             )
-            pdf_link = st.text_input("Ou cole aqui um link externo para o PDF", key="pdf_link")
+            pdf_link = st.text_input("Ou cole aqui o link externo para o PDF", key="pdf_link")
 
             st.markdown("### 🔗 Referência do Protocolo")
             ref_autor = st.text_input("Autor da Referência")
@@ -66,21 +73,22 @@ def exibir_formulario():
             st.markdown("### 📎 Anexos Adicionais")
             st.file_uploader(
                 "Anexar outros arquivos (WORD, imagens, .csv etc.)",
-                type=["pdf", "png", "jpg", "jpeg", "docx", "txt", "xlsx", "csv"],
+                type=["pdf","png","jpg","jpeg","docx","txt","xlsx","csv"],
                 key="anexos_adicionais_protocolo"
             )
 
             submitted = st.form_submit_button("💾 Salvar Protocolo")
             if submitted:
-                # Gera novo ID
                 novo_id = str(uuid.uuid4())[:8]
-                # Processa PDF
+
+                # processa PDF anexado
                 arquivo_bytes = None
                 arquivo_nome  = None
                 if arquivo_protocolo:
-                    arquivo_bytes = base64.b64encode(arquivo_protocolo.read()).decode("utf-8")
+                    arquivo_bytes = arquivo_protocolo.read()
                     arquivo_nome  = arquivo_protocolo.name
-                # Escolhe link externo se inserido
+
+                # usa link externo se fornecido
                 arquivo_link = pdf_link.strip() or None
 
                 novo = {
@@ -109,9 +117,8 @@ def exibir_formulario():
                     "comentarios": []
                 }
 
-                df_novo = pd.DataFrame([novo])
                 st.session_state.dados = pd.concat(
-                    [st.session_state.dados, df_novo],
+                    [st.session_state.dados, pd.DataFrame([novo])],
                     ignore_index=True
                 )
                 st.success("✅ Protocolo cadastrado com sucesso!")
@@ -125,10 +132,10 @@ def exibir_formulario():
             with col2:
                 conc      = st.text_input("Concentração")
             with col3:
-                unidade   = st.selectbox("Unidade", ["%", "mL", "µL", "mg/mL", "g/L", "OUTRO"])
+                unidade   = st.selectbox("Unidade", ["%","mL","µL","mg/mL","g/L","OUTRO"])
 
-            st.markdown("### 📑 Protocolo do Reagente")
-            st.info("Carregue o protocolo em **formato PDF** ou insira link externo.")
+            st.markdown("### 📑 Protocolo do Reagente (PDF ou Link)")
+            st.info("Você pode **anexar um PDF** ou **colar um link externo**.")
             arquivo_reagente = st.file_uploader(
                 "Anexar protocolo de preparo (PDF)",
                 type=["pdf"],
@@ -143,19 +150,19 @@ def exibir_formulario():
             st.markdown("### 📎 Anexos Adicionais")
             st.file_uploader(
                 "Anexar outros arquivos (WORD, imagens, .csv etc.)",
-                type=["pdf", "png", "jpg", "jpeg", "docx", "txt", "xlsx", "csv"],
+                type=["pdf","png","jpg","jpeg","docx","txt","xlsx","csv"],
                 key="anexos_adicionais_reagente"
             )
 
             enviar = st.form_submit_button("💾 Salvar Reagente/Solução")
             if enviar:
-                # Processa PDF de reagente
-                bytes_reag  = None
-                nome_reag   = None
+                bytes_reag = None
+                nome_reag  = None
                 if arquivo_reagente:
-                    bytes_reag = base64.b64encode(arquivo_reagente.read()).decode("utf-8")
+                    bytes_reag = arquivo_reagente.read()
                     nome_reag  = arquivo_reagente.name
-                link_reag   = reag_link.strip() or None
+
+                link_reag = reag_link.strip() or None
 
                 novo_reagente = {
                     "nome": nome_sol.upper(),
@@ -173,5 +180,4 @@ def exibir_formulario():
                     [st.session_state.reagentes, pd.DataFrame([novo_reagente])],
                     ignore_index=True
                 )
-
                 st.success("✅ Reagente/Solução cadastrada!")
