@@ -3,7 +3,7 @@ from urllib.parse import quote, unquote
 import base64
 import os
 import json
-import pandas as pd  # <- Corrigido aqui
+import pandas as pd
 
 def exibir_reagentes():
     st.title("🧬 Lista de Reagentes e Soluções")
@@ -11,7 +11,7 @@ def exibir_reagentes():
 
     demo_path = "demo_display/reagentes_demo.json"
 
-    # Carrega reagentes de demonstração, se ainda não carregado
+    # Carrega reagentes de demonstração, se ainda não estiverem carregados
     if "reagentes_demo" not in st.session_state:
         if os.path.exists(demo_path):
             try:
@@ -28,13 +28,22 @@ def exibir_reagentes():
         else:
             st.session_state.reagentes_demo = []
 
-    # Garante que reagentes é uma lista
+    # Garantir que 'reagentes' está presente e em formato de lista
     if "reagentes" not in st.session_state:
         st.session_state.reagentes = []
 
-    reagentes = st.session_state.get("reagentes", []) + st.session_state.get("reagentes_demo", [])
+    # Converte reagentes de DataFrame para lista, se necessário
+    reagentes_real = st.session_state.get("reagentes", [])
+    if isinstance(reagentes_real, pd.DataFrame):
+        reagentes_real = reagentes_real.to_dict(orient="records")
 
-    # Filtro por nome
+    reagentes_demo = st.session_state.get("reagentes_demo", [])
+    if isinstance(reagentes_demo, pd.DataFrame):
+        reagentes_demo = reagentes_demo.to_dict(orient="records")
+
+    reagentes = reagentes_real + reagentes_demo
+
+    # Filtro de busca
     termo = st.text_input("🔍 Buscar reagente por nome")
     if termo:
         reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
@@ -78,7 +87,7 @@ def exibir_reagentes():
                 for c in r["comentarios"]:
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
-                if not r.get("demo"):  # Apenas se for reagente real (não demo)
+                if not r.get("demo"):  # Apenas para reagentes reais
                     with st.form(f"form_comentario_{idx}"):
                         nome = st.text_input("Seu Nome", key=f"nome_{idx}")
                         lab = st.text_input("Laboratório", key=f"lab_{idx}")
@@ -87,7 +96,6 @@ def exibir_reagentes():
 
                         if enviar and nome and texto:
                             novo_comentario = {"nome": nome, "lab": lab, "texto": texto}
-                            # Index no st.session_state.reagentes precisa ser ajustado
                             offset = len(st.session_state.get("reagentes_demo", []))
                             index_real = idx - offset if idx >= offset else None
                             if index_real is not None and 0 <= index_real < len(st.session_state.reagentes):
