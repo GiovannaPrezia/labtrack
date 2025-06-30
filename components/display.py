@@ -35,6 +35,9 @@ def exibir_protocolos():
 
     col_main, col_side = st.columns([4, 1.5])
 
+    # Aba de reagentes para link
+    aba_reag_tab = quote("🧪 CADASTRO DE REAGENTE/SOLUÇÃO", safe="")
+
     with col_main:
         for grupo in df["grupo"].dropna().unique():
             st.markdown(f"### 🧬 {grupo}")
@@ -78,7 +81,29 @@ def exibir_protocolos():
                             st.write(f"👤 **Autor**: {row['autor']} ({row['email']})")
                             st.write(f"🏢 **Departamento**: {row['departamento']} | **Cargo**: {row['cargo']}")
                             st.write(f"📅 **Criado em**: {row['data']} | **Validade**: {row['validade']}")
-                            st.write(f"🧪 **Reagentes utilizados**: {row['reagentes']}")
+
+                            # ─── Reagentes utilizados com link ───
+                            st.markdown("🧪 **Reagentes utilizados**:", unsafe_allow_html=True)
+                            raw = row.get("reagentes", "")
+                            if isinstance(raw, str):
+                                reag_list = [r.strip() for r in raw.split(",") if r.strip()]
+                            elif isinstance(raw, list):
+                                reag_list = raw
+                            else:
+                                reag_list = []
+                            if reag_list:
+                                link_items = []
+                                for nome in reag_list:
+                                    nome_enc = quote(nome, safe="")
+                                    link_items.append(
+                                        f'<a href="/?aba={aba_reag_tab}&filtro_reagente={nome_enc}" '
+                                        f'style="color:#4da6ff; text-decoration:none;">{nome}</a>'
+                                    )
+                                st.markdown(", ".join(link_items), unsafe_allow_html=True)
+                            else:
+                                st.markdown("Nenhum reagente listado.")
+
+                            # Referência
                             ref = row.get("referencia", {})
                             st.write(
                                 f"🔗 **Referência**: {ref.get('autor','')}, "
