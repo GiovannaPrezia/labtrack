@@ -11,7 +11,7 @@ def exibir_reagentes():
 
     demo_path = "demo_display/reagentes_demo.json"
 
-    # Carrega reagentes de demonstração, se ainda não estiverem carregados
+    # Carrega reagentes de demonstração, se necessário
     if "reagentes_demo" not in st.session_state:
         if os.path.exists(demo_path):
             try:
@@ -28,53 +28,49 @@ def exibir_reagentes():
         else:
             st.session_state.reagentes_demo = []
 
-    # Garantir que 'reagentes' está presente e em formato de lista
+    # Garante que reagentes é uma lista de dicionários
     if "reagentes" not in st.session_state:
         st.session_state.reagentes = []
 
-    # Converte reagentes de DataFrame para lista, se necessário
-    reagentes_real = st.session_state.get("reagentes", [])
+    reagentes_real = st.session_state.reagentes
     if isinstance(reagentes_real, pd.DataFrame):
         reagentes_real = reagentes_real.to_dict(orient="records")
 
-    reagentes_demo = st.session_state.get("reagentes_demo", [])
+    reagentes_demo = st.session_state.reagentes_demo
     if isinstance(reagentes_demo, pd.DataFrame):
         reagentes_demo = reagentes_demo.to_dict(orient="records")
 
     reagentes = reagentes_real + reagentes_demo
 
-    # Filtro de busca
+    # Campo de busca
     termo = st.text_input("🔍 Buscar reagente por nome")
     if termo:
         reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
 
     for idx, r in enumerate(reagentes):
-        with st.container():
-            open_key = f"open_{idx}"
-            if open_key not in st.session_state:
-                st.session_state[open_key] = False
+        bloco_key = f"detalhes_{idx}"
 
+        with st.container():
             st.markdown(
                 f"""
                 <div style='border:1px solid #666; border-radius:10px; padding:10px; margin-bottom:15px; background-color:#111;'>
                     <strong>📘 {r['nome']}</strong><br>
                     <span style='font-size:13px;'>Validade: {r.get('validade', 'N/A')}</span><br><br>
-                    <a href='#' style='color:#4da6ff;' onclick="document.getElementById('{open_key}').click()">🔍 Ver detalhes</a>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=open_key):
-                st.session_state[open_key] = not st.session_state[open_key]
+            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=f"btn_{idx}"):
+                st.session_state[bloco_key] = not st.session_state.get(bloco_key, False)
 
-            if st.session_state[open_key]:
+            if st.session_state.get(bloco_key, False):
                 st.markdown("#### 📦 Informações do Reagente")
                 st.write(f"👤 **Responsável**: {r.get('responsavel', 'Desconhecido')}")
                 st.write(f"📍 **Local de Armazenamento**: {r.get('local', 'Desconhecido')}")
                 st.write(f"🧪 **Componentes**: {r.get('componentes', 'N/A')}")
 
-                # Exibir preparo PDF se presente
+                # PDF de preparo (se existir)
                 if r.get("preparo_nome") and r.get("preparo_bytes"):
                     b64 = base64.b64encode(bytes(r["preparo_bytes"])).decode()
                     href = f'<a href="data:application/pdf;base64,{b64}" target="_blank">📄 Visualizar preparo ({r["preparo_nome"]})</a>'
@@ -87,7 +83,7 @@ def exibir_reagentes():
                 for c in r["comentarios"]:
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
-                if not r.get("demo"):  # Apenas para reagentes reais
+                if not r.get("demo"):
                     with st.form(f"form_comentario_{idx}"):
                         nome = st.text_input("Seu Nome", key=f"nome_{idx}")
                         lab = st.text_input("Laboratório", key=f"lab_{idx}")
@@ -96,9 +92,9 @@ def exibir_reagentes():
 
                         if enviar and nome and texto:
                             novo_comentario = {"nome": nome, "lab": lab, "texto": texto}
-                            offset = len(st.session_state.get("reagentes_demo", []))
-                            index_real = idx - offset if idx >= offset else None
-                            if index_real is not None and 0 <= index_real < len(st.session_state.reagentes):
+                            offset = len(st.session_state.reagentes_demo)
+                            index_real = idx - offset
+                            if 0 <= index_real < len(st.session_state.reagentes):
                                 if "comentarios" not in st.session_state.reagentes[index_real]:
                                     st.session_state.reagentes[index_real]["comentarios"] = []
                                 st.session_state.reagentes[index_real]["comentarios"].append(novo_comentario)
