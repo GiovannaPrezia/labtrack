@@ -9,6 +9,7 @@ def exibir_reagentes():
     st.title("🧬 Lista de Reagentes e Soluções")
     st.markdown("Visualize reagentes já cadastrados ou adicione novos no menu lateral.")
 
+    # Carrega demo de reagentes, se existir
     demo_path = "demo_display/reagentes_demo.json"
     if "reagentes_demo" not in st.session_state:
         if os.path.exists(demo_path):
@@ -24,10 +25,11 @@ def exibir_reagentes():
         else:
             st.session_state.reagentes_demo = []
 
+    # Garante lista real de reagentes
     if "reagentes" not in st.session_state:
         st.session_state.reagentes = []
 
-    # DataFrame → lista de dicts
+    # Converte DataFrame para lista de dicts, se necessário
     reag_real = st.session_state.reagentes
     if isinstance(reag_real, pd.DataFrame):
         reag_real = reag_real.to_dict(orient="records")
@@ -37,20 +39,20 @@ def exibir_reagentes():
 
     reagentes = reag_real + reag_demo
 
-    # Filtro automático via query_params
-    filtro = st.experimental_get_query_params().get("filtro_reagente", [""])[0]
-    termo = st.text_input("🔍 Buscar reagente por nome", value=filtro)
+    # Filtro automático via st.query_params
+    filtro = st.query_params.get("filtro_reagente", [""])[0]
+    termo  = st.text_input("🔍 Buscar reagente por nome", value=filtro)
     if termo:
         reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
 
     for idx, r in enumerate(reagentes):
         expand_key = f"reag_expand_{idx}"
-        # inicializa o estado se não existir
         if expand_key not in st.session_state:
             st.session_state[expand_key] = False
 
         button_key = f"reag_btn_{idx}"
         with st.container():
+            # Cartão resumido
             st.markdown(
                 f"<div style='border:1px solid #666; border-radius:10px;"
                 f"padding:10px; margin-bottom:15px; background-color:#111;'>"
@@ -60,19 +62,22 @@ def exibir_reagentes():
                 unsafe_allow_html=True
             )
 
+            # Botão de detalhes
             if st.button(f"🔍 Ver detalhes de {r['nome']}", key=button_key):
                 st.session_state[expand_key] = not st.session_state[expand_key]
 
+            # Se expandido, mostra detalhes
             if st.session_state[expand_key]:
                 st.markdown("#### 📦 Informações do Reagente")
                 st.write(f"👤 **Responsável**: {r.get('responsavel','Desconhecido')}")
                 st.write(f"📍 **Local**: {r.get('local','Desconhecido')}")
                 st.write(f"🧪 **Componentes**: {r.get('componentes','N/A')}")
 
+                # Link para PDF de preparo, se existir
                 arquivo_bytes = r.get("arquivo_bytes")
                 arquivo_nome  = r.get("arquivo_nome")
                 if arquivo_bytes:
-                    # se já for base64 string, use diretamente; se for bytes, encode
+                    # Se for string base64 ou bytes
                     if isinstance(arquivo_bytes, str):
                         b64 = arquivo_bytes
                     else:
@@ -83,15 +88,17 @@ def exibir_reagentes():
                     )
                     st.markdown(href, unsafe_allow_html=True)
 
+                # Comentários
                 st.markdown("##### 💬 Comentários")
                 for c in r.get("comentarios", []):
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
+                # Form para adicionar comentário a reagentes não-demo
                 if not r.get("demo"):
                     with st.form(f"form_coment_{idx}"):
-                        nome = st.text_input("Seu Nome", key=f"nome_{idx}")
-                        lab  = st.text_input("Laboratório", key=f"lab_{idx}")
-                        texto= st.text_area("Comentário", key=f"coment_{idx}")
+                        nome  = st.text_input("Seu Nome", key=f"nome_{idx}")
+                        lab   = st.text_input("Laboratório", key=f"lab_{idx}")
+                        texto = st.text_area("Comentário", key=f"coment_{idx}")
                         enviar = st.form_submit_button("💬 Adicionar Comentário")
                         if enviar and nome and texto:
                             novo = {"nome": nome, "lab": lab, "texto": texto}
