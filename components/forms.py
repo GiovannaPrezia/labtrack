@@ -57,13 +57,13 @@ def exibir_formulario():
             reagentes_usados = st.multiselect("Reagentes Utilizados", opcoes)
 
             st.markdown("### 📑 Protocolo (PDF ou link externo)")
-            st.info("Você pode anexar um PDF ou colar um link para o protocolo.")
+            st.info("Você deve anexar o PDF do protocolo e colar o link do Drive")
             arquivo_protocolo = st.file_uploader(
                 "Anexar protocolo (PDF)",
                 type=["pdf"],
                 key="arquivo_protocolo"
             )
-            pdf_link = st.text_input("Ou cole aqui o link externo do PDF", key="pdf_link")
+            pdf_link = st.text_input("Cole aqui o link externo do Protocolo", key="pdf_link")
 
             st.markdown("### 🔗 Referência do Protocolo")
             ref_autor = st.text_input("Autor da Referência")
