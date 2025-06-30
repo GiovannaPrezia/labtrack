@@ -11,7 +11,7 @@ def exibir_reagentes():
 
     demo_path = "demo_display/reagentes_demo.json"
 
-    # Carrega reagentes de demonstração, se necessário
+    # —— Carrega reagentes de demonstração se necessário ——
     if "reagentes_demo" not in st.session_state:
         if os.path.exists(demo_path):
             try:
@@ -28,32 +28,38 @@ def exibir_reagentes():
         else:
             st.session_state.reagentes_demo = []
 
-    # Garante que reagentes é uma lista de dicionários
+    # —— Garante que haja uma lista de reagentes reais ——
     if "reagentes" not in st.session_state:
         st.session_state.reagentes = []
 
-    reagentes_real = st.session_state.reagentes
-    if isinstance(reagentes_real, pd.DataFrame):
-        reagentes_real = reagentes_real.to_dict(orient="records")
+    # Converte DataFrame → lista de dicts, se for o caso
+    reag_real = st.session_state.reagentes
+    if isinstance(reag_real, pd.DataFrame):
+        reag_real = reag_real.to_dict(orient="records")
 
-    reagentes_demo = st.session_state.reagentes_demo
-    if isinstance(reagentes_demo, pd.DataFrame):
-        reagentes_demo = reagentes_demo.to_dict(orient="records")
+    reag_demo = st.session_state.reagentes_demo
+    if isinstance(reag_demo, pd.DataFrame):
+        reag_demo = reag_demo.to_dict(orient="records")
 
-    reagentes = reagentes_real + reagentes_demo
+    reagentes = reag_real + reag_demo
 
-    # Campo de busca
-    termo = st.text_input("🔍 Buscar reagente por nome")
+    # —— Filtro automático via URL ——
+    query_params = st.experimental_get_query_params()
+    filtro = query_params.get("filtro_reagente", [""])[0]
+
+    termo = st.text_input("🔍 Buscar reagente por nome", value=filtro)
     if termo:
         reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
 
+    # —— Exibição dos reagentes ——
     for idx, r in enumerate(reagentes):
         bloco_key = f"detalhes_{idx}"
 
         with st.container():
             st.markdown(
                 f"""
-                <div style='border:1px solid #666; border-radius:10px; padding:10px; margin-bottom:15px; background-color:#111;'>
+                <div style='border:1px solid #666; border-radius:10px; 
+                            padding:10px; margin-bottom:15px; background-color:#111;'>
                     <strong>📘 {r['nome']}</strong><br>
                     <span style='font-size:13px;'>Validade: {r.get('validade', 'N/A')}</span><br><br>
                 </div>
@@ -73,14 +79,14 @@ def exibir_reagentes():
                 # PDF de preparo (se existir)
                 if r.get("preparo_nome") and r.get("preparo_bytes"):
                     b64 = base64.b64encode(bytes(r["preparo_bytes"])).decode()
-                    href = f'<a href="data:application/pdf;base64,{b64}" target="_blank">📄 Visualizar preparo ({r["preparo_nome"]})</a>'
+                    href = (
+                        f'<a href="data:application/pdf;base64,{b64}" '
+                        f'target="_blank">📄 Visualizar preparo ({r["preparo_nome"]})</a>'
+                    )
                     st.markdown(href, unsafe_allow_html=True)
 
                 st.markdown("##### 💬 Comentários")
-                if "comentarios" not in r or not isinstance(r["comentarios"], list):
-                    r["comentarios"] = []
-
-                for c in r["comentarios"]:
+                for c in r.get("comentarios", []):
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
                 if not r.get("demo"):
@@ -95,8 +101,6 @@ def exibir_reagentes():
                             offset = len(st.session_state.reagentes_demo)
                             index_real = idx - offset
                             if 0 <= index_real < len(st.session_state.reagentes):
-                                if "comentarios" not in st.session_state.reagentes[index_real]:
-                                    st.session_state.reagentes[index_real]["comentarios"] = []
-                                st.session_state.reagentes[index_real]["comentarios"].append(novo_comentario)
+                                st.session_state.reagentes[index_real].setdefault("comentarios", []).append(novo_comentario)
                                 st.success("Comentário adicionado!")
                                 st.experimental_rerun()
