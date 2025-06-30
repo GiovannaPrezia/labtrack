@@ -1,0 +1,36 @@
+import streamlit as st
+import pandas as pd
+from components import forms, display, reagentes, export
+
+st.set_page_config(page_title="Controle de Protocolos", page_icon="🧪", layout="wide")
+
+# Inicializar dados
+if "dados" not in st.session_state:
+    try:
+        st.session_state.dados = pd.read_csv("data/protocolos.csv")
+    except FileNotFoundError:
+        st.session_state.dados = pd.DataFrame()
+
+if "reagentes" not in st.session_state:
+    try:
+        st.session_state.reagentes = pd.read_csv("data/reagentes.csv")
+    except FileNotFoundError:
+        st.session_state.reagentes = pd.DataFrame()
+
+# Menu lateral
+menu = st.sidebar.radio("Menu", [
+    "➕ Cadastrar Novo Protocolo",
+    "📄 Protocolos Laboratoriais",
+    "🧬 Lista de Reagentes",
+    "📤 Exportar / Backups"
+])
+
+# Navegação
+if menu == "➕ Cadastrar Novo Protocolo":
+    forms.exibir_formulario()
+elif menu == "📄 Protocolos Laboratoriais":
+    display.exibir_protocolos()
+elif menu == "🧬 Lista de Reagentes":
+    reagentes.exibir_reagentes()
+elif menu == "📤 Exportar / Backups":
+    export.exportar_dados()
