@@ -1,56 +1,98 @@
 import streamlit as st
 from urllib.parse import quote, unquote
-import pandas as pd
 import base64
 import os
 import json
+import pandas as pd  # <- Corrigido aqui
 
 def exibir_reagentes():
-    st.header("🧪 Cadastro de Reagentes e Soluções")
+    st.title("🧬 Lista de Reagentes e Soluções")
+    st.markdown("Visualize reagentes já cadastrados ou adicione novos no menu lateral.")
 
-    # Garantir que reagentes é um DataFrame
-    if "reagentes" not in st.session_state or isinstance(st.session_state.reagentes, list):
-        st.session_state.reagentes = pd.DataFrame(columns=[
-            "nome", "componentes", "preparo", "validade", "responsavel", "local",
-            "arquivo_nome", "arquivo_bytes"
-        ])
+    demo_path = "demo_display/reagentes_demo.json"
 
-    with st.form("cadastro_reagente_direto"):
-        st.subheader("➕ Cadastrar Novo Reagente ou Solução")
-        nome = st.text_input("Nome do Reagente/Solução")
-        componentes = st.text_input("Composição / Componentes")
-        validade = st.date_input("Validade")
-        responsavel = st.text_input("Responsável")
-        local = st.text_input("Local de Armazenamento")
-        arquivo = st.file_uploader("📎 Protocolo de preparo (PDF opcional)", type=["pdf"], key="arquivo_reagente_manual")
+    # Carrega reagentes de demonstração, se ainda não carregado
+    if "reagentes_demo" not in st.session_state:
+        if os.path.exists(demo_path):
+            try:
+                with open(demo_path, "r", encoding="utf-8") as f:
+                    reag_demo = json.load(f)
+                for r in reag_demo:
+                    r["demo"] = True
+                    if "comentarios" not in r:
+                        r["comentarios"] = []
+                st.session_state.reagentes_demo = reag_demo
+            except Exception as e:
+                st.warning(f"Erro ao carregar reagentes demo: {e}")
+                st.session_state.reagentes_demo = []
+        else:
+            st.session_state.reagentes_demo = []
 
-        enviar = st.form_submit_button("💾 Salvar Reagente")
-        if enviar and nome:
-            novo = {
-                "nome": nome.upper(),
-                "componentes": componentes.upper(),
-                "preparo": "",
-                "validade": validade.strftime("%Y-%m-%d"),
-                "responsavel": responsavel.upper(),
-                "local": local.upper(),
-                "arquivo_nome": arquivo.name if arquivo else None,
-                "arquivo_bytes": arquivo.read() if arquivo else None
-            }
+    # Garante que reagentes é uma lista
+    if "reagentes" not in st.session_state:
+        st.session_state.reagentes = []
 
-            st.session_state.reagentes = pd.concat(
-                [st.session_state.reagentes, pd.DataFrame([novo])],
-                ignore_index=True
+    reagentes = st.session_state.get("reagentes", []) + st.session_state.get("reagentes_demo", [])
+
+    # Filtro por nome
+    termo = st.text_input("🔍 Buscar reagente por nome")
+    if termo:
+        reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
+
+    for idx, r in enumerate(reagentes):
+        with st.container():
+            open_key = f"open_{idx}"
+            if open_key not in st.session_state:
+                st.session_state[open_key] = False
+
+            st.markdown(
+                f"""
+                <div style='border:1px solid #666; border-radius:10px; padding:10px; margin-bottom:15px; background-color:#111;'>
+                    <strong>📘 {r['nome']}</strong><br>
+                    <span style='font-size:13px;'>Validade: {r.get('validade', 'N/A')}</span><br><br>
+                    <a href='#' style='color:#4da6ff;' onclick="document.getElementById('{open_key}').click()">🔍 Ver detalhes</a>
+                </div>
+                """,
+                unsafe_allow_html=True
             )
-            st.success("✅ Reagente cadastrado com sucesso!")
 
-    st.subheader("📋 Lista de Reagentes Cadastrados")
+            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=open_key):
+                st.session_state[open_key] = not st.session_state[open_key]
 
-    reagentes_df = pd.concat([
-        st.session_state.get("reagentes", pd.DataFrame()),
-        st.session_state.get("reagentes_demo", pd.DataFrame())  # opcional, se existir
-    ], ignore_index=True)
+            if st.session_state[open_key]:
+                st.markdown("#### 📦 Informações do Reagente")
+                st.write(f"👤 **Responsável**: {r.get('responsavel', 'Desconhecido')}")
+                st.write(f"📍 **Local de Armazenamento**: {r.get('local', 'Desconhecido')}")
+                st.write(f"🧪 **Componentes**: {r.get('componentes', 'N/A')}")
 
-    if reagentes_df.empty:
-        st.info("Nenhum reagente cadastrado.")
-    else:
-        st.dataframe(reagentes_df)
+                # Exibir preparo PDF se presente
+                if r.get("preparo_nome") and r.get("preparo_bytes"):
+                    b64 = base64.b64encode(bytes(r["preparo_bytes"])).decode()
+                    href = f'<a href="data:application/pdf;base64,{b64}" target="_blank">📄 Visualizar preparo ({r["preparo_nome"]})</a>'
+                    st.markdown(href, unsafe_allow_html=True)
+
+                st.markdown("##### 💬 Comentários")
+                if "comentarios" not in r or not isinstance(r["comentarios"], list):
+                    r["comentarios"] = []
+
+                for c in r["comentarios"]:
+                    st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
+
+                if not r.get("demo"):  # Apenas se for reagente real (não demo)
+                    with st.form(f"form_comentario_{idx}"):
+                        nome = st.text_input("Seu Nome", key=f"nome_{idx}")
+                        lab = st.text_input("Laboratório", key=f"lab_{idx}")
+                        texto = st.text_area("Comentário", key=f"coment_{idx}")
+                        enviar = st.form_submit_button("💬 Adicionar Comentário")
+
+                        if enviar and nome and texto:
+                            novo_comentario = {"nome": nome, "lab": lab, "texto": texto}
+                            # Index no st.session_state.reagentes precisa ser ajustado
+                            offset = len(st.session_state.get("reagentes_demo", []))
+                            index_real = idx - offset if idx >= offset else None
+                            if index_real is not None and 0 <= index_real < len(st.session_state.reagentes):
+                                if "comentarios" not in st.session_state.reagentes[index_real]:
+                                    st.session_state.reagentes[index_real]["comentarios"] = []
+                                st.session_state.reagentes[index_real]["comentarios"].append(novo_comentario)
+                                st.success("Comentário adicionado!")
+                                st.experimental_rerun()
