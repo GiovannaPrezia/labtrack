@@ -44,7 +44,12 @@ def exibir_reagentes():
         reagentes = [r for r in reagentes if termo.lower() in r["nome"].lower()]
 
     for idx, r in enumerate(reagentes):
-        key = f"detalhes_{idx}"
+        expand_key = f"reag_expand_{idx}"
+        # inicializa o estado se não existir
+        if expand_key not in st.session_state:
+            st.session_state[expand_key] = False
+
+        button_key = f"reag_btn_{idx}"
         with st.container():
             st.markdown(
                 f"<div style='border:1px solid #666; border-radius:10px;"
@@ -55,18 +60,15 @@ def exibir_reagentes():
                 unsafe_allow_html=True
             )
 
-            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=key):
-                st.session_state[key] = not st.session_state.get(key, False)
+            if st.button(f"🔍 Ver detalhes de {r['nome']}", key=button_key):
+                st.session_state[expand_key] = not st.session_state[expand_key]
 
-            if st.session_state.get(key, False):
+            if st.session_state[expand_key]:
                 st.markdown("#### 📦 Informações do Reagente")
                 st.write(f"👤 **Responsável**: {r.get('responsavel','Desconhecido')}")
                 st.write(f"📍 **Local**: {r.get('local','Desconhecido')}")
                 st.write(f"🧪 **Componentes**: {r.get('componentes','N/A')}")
 
-                # ——————————————————————————————
-                # Se houver PDF (arquivo_bytes), exibe link de visualização
-                # ——————————————————————————————
                 arquivo_bytes = r.get("arquivo_bytes")
                 arquivo_nome  = r.get("arquivo_nome")
                 if arquivo_bytes:
@@ -85,7 +87,6 @@ def exibir_reagentes():
                 for c in r.get("comentarios", []):
                     st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
-                # — somente adiciona comentários para itens não-demo
                 if not r.get("demo"):
                     with st.form(f"form_coment_{idx}"):
                         nome = st.text_input("Seu Nome", key=f"nome_{idx}")
