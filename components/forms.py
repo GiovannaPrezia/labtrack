@@ -1,184 +1,147 @@
 import streamlit as st
-from datetime import datetime
-import uuid
 import pandas as pd
+from urllib.parse import quote
+from datetime import datetime
+from pathlib import Path
+import json
 
-def exibir_formulario():
-    st.header("📋 Cadastrar Novo Protocolo")
+def carregar_protocolos_demo():
+    try:
+        demo_path = Path("demo_display/protocolos_demo.json")
+        with demo_path.open("r", encoding="utf-8") as f:
+            return pd.DataFrame(json.load(f))
+    except Exception as e:
+        st.warning(f"Erro ao carregar protocolos demo: {e}")
+        return pd.DataFrame()
 
-    st.markdown("""
-        <style>
-        div[data-testid="stTextInput"] input,
-        div[data-testid="stTextArea"] textarea {
-            text-transform: uppercase;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+def exibir_protocolos():
+    # Carrega dados demo se necessário
+    if "dados" not in st.session_state or st.session_state.dados.empty:
+        st.session_state.dados = carregar_protocolos_demo()
+    df = st.session_state.dados
+    if df.empty:
+        st.info("Nenhum protocolo cadastrado ainda.")
+        return
 
-    aba_protocolo, aba_reagente = st.tabs([
-        "📑 CADASTRO DE PROTOCOLO",
-        "🧪 CADASTRO DE REAGENTE/SOLUÇÃO"
-    ])
+    # Filtra protocolos de reagentes, se houver
+    df = df[df["categoria"] != "🧪 Protocolo de Reagentes/Soluções"]
 
-    # Inicializa reagentes como DataFrame se necessário
-    if "reagentes" not in st.session_state or isinstance(st.session_state.reagentes, list):
-        st.session_state.reagentes = pd.DataFrame(columns=[
-            "nome", "componentes", "preparo", "validade", "responsavel", "local",
-            "arquivo_nome", "arquivo_bytes", "arquivo_link"
-        ])
+    st.title("🔬 LabTrack: Plataforma de Controle de Versionamento de Protocolos")
+    st.markdown("## Protocolos Cadastrados")
 
-    # Inicializa dados de protocolos se ainda não existir
-    if "dados" not in st.session_state or isinstance(st.session_state.dados, list):
-        st.session_state.dados = pd.DataFrame(columns=[
-            "id","nome","grupo","categoria","versao","data","validade",
-            "autor","email","departamento","cargo","reagentes",
-            "arquivo_nome","arquivo_bytes","arquivo_link",
-            "historico","referencia","comentarios"
-        ])
+    termo = st.text_input("🔍 Buscar por nome do protocolo")
+    if termo:
+        df = df[df["nome"].str.contains(termo, case=False, na=False)]
 
-    with aba_protocolo:
-        with st.form("form_protocolo"):
-            nome        = st.text_input("Nome do Protocolo")
-            grupo       = st.text_input("Grupo ou Área")
-            categoria   = st.selectbox("Categoria do Protocolo", [
-                "Extração de DNA", "Extração de RNA", "Cultivo Celular",
-                "Transfecção", "Diferenciação Celular", "Outro"
-            ])
-            versao      = st.text_input("Versão", value="1.0")
-            data        = st.date_input("Data de Criação", value=datetime.today())
-            validade    = st.date_input("Validade do Protocolo")
-            autor       = st.text_input("Nome do Autor")
-            email       = st.text_input("E-mail")  # aqui não upper()
-            departamento= st.text_input("Departamento")
-            cargo       = st.text_input("Cargo")
+    col_main, col_side = st.columns([4, 1.5])
 
-            opcoes      = st.session_state.reagentes["nome"].tolist() if not st.session_state.reagentes.empty else []
-            reagentes_usados = st.multiselect("Reagentes Utilizados", opcoes)
+    with col_main:
+        for grupo in df["grupo"].dropna().unique():
+            st.markdown(f"### 🧬 {grupo}")
+            grupo_df = df[df["grupo"] == grupo]
 
-            st.markdown("### 📑 Protocolo (PDF e Link)")
-            st.info("Carregue o protocolo em **formato PDF** e cole o link externo do Drive do Laboratório.
-            Caso não seja a Versão 1 do Protocolo, adicione também o arquivo Word em **Anexos Adicionais**.")
-            arquivo_protocolo = st.file_uploader(
-                "Anexar protocolo (PDF obrigatório)",
-                type=["pdf"],
-                key="arquivo_protocolo"
-            )
-            pdf_link = st.text_input("Cole aqui o link externo para o protocolo", key="pdf_link")
+            for categoria in grupo_df["categoria"].dropna().unique():
+                st.markdown(f"#### 📁 {categoria}")
+                cat_df = grupo_df[grupo_df["categoria"] == categoria]
 
-            st.markdown("### 🔗 Referência do Protocolo")
-            ref_autor = st.text_input("Autor da Referência")
-            ref_ano   = st.text_input("Ano da Publicação")
-            ref_doi   = st.text_input("DOI")
-            ref_link  = st.text_input("Link (HTML)")
+                for _, row in cat_df.iterrows():
+                    expand_key = f"detalhes_{row['id']}"
+                    if expand_key not in st.session_state:
+                        st.session_state[expand_key] = False
 
-            st.markdown("### 📎 Anexos Adicionais")
-            st.file_uploader(
-                "Anexar outros arquivos (WORD, imagens, .csv etc.)",
-                type=["pdf","png","jpg","jpeg","docx","txt","xlsx","csv"],
-                key="anexos_adicionais_protocolo"
-            )
+                    with st.container():
+                        st.markdown(f"""
+                            <div style='border:1px solid #444; border-radius:10px;
+                                        padding:10px; margin-bottom:10px; background-color:#111;'>
+                                <strong>📄 {row['nome']}</strong><br>
+                                <span style='font-size:13px;'>Versão {row['versao']} • {row['data']}</span>
+                            </div>
+                        """, unsafe_allow_html=True)
 
-            submitted = st.form_submit_button("💾 Salvar Protocolo")
-            if submitted:
-                novo_id = str(uuid.uuid4())[:8]
+                        if st.button("🔍 Ver Detalhes", key=row["id"]):
+                            st.session_state[expand_key] = not st.session_state[expand_key]
 
-                # processa PDF anexado
-                arquivo_bytes = None
-                arquivo_nome  = None
-                if arquivo_protocolo:
-                    arquivo_bytes = arquivo_protocolo.read()
-                    arquivo_nome  = arquivo_protocolo.name
+                        if st.session_state[expand_key]:
+                            # Botão de download do PDF
+                            if row.get("arquivo_bytes"):
+                                st.download_button(
+                                    label="📥 Baixar PDF",
+                                    data=row["arquivo_bytes"],
+                                    file_name=row.get("arquivo_nome", "protocolo.pdf"),
+                                    mime="application/pdf"
+                                )
+                            else:
+                                st.info("Nenhum PDF anexado.")
 
-                # usa link externo se fornecido
-                arquivo_link = pdf_link.strip() or None
+                            # Informações gerais
+                            st.markdown("### 📦 Informações Gerais")
+                            st.write(f"👤 **Autor**: {row['autor']} ({row['email']})")
+                            st.write(f"🏢 **Departamento**: {row['departamento']} | **Cargo**: {row['cargo']}")
+                            st.write(f"📅 **Criado em**: {row['data']} | **Validade**: {row['validade']}")
 
-                novo = {
-                    "id": novo_id,
-                    "nome": nome.upper(),
-                    "grupo": grupo.upper(),
-                    "categoria": categoria.upper(),
-                    "versao": versao.upper(),
-                    "data": data.strftime("%Y-%m-%d"),
-                    "validade": validade.strftime("%Y-%m-%d"),
-                    "autor": autor.upper(),
-                    "email": email,  # removido upper()
-                    "departamento": departamento.upper(),
-                    "cargo": cargo.upper(),
-                    "reagentes": ", ".join(reagentes_usados),
-                    "arquivo_nome": arquivo_nome,
-                    "arquivo_bytes": arquivo_bytes,
-                    "arquivo_link": arquivo_link,
-                    "historico": [],
-                    "referencia": {
-                        "autor": ref_autor.upper(),
-                        "ano": ref_ano.upper(),
-                        "doi": ref_doi.upper(),
-                        "link": ref_link
-                    },
-                    "comentarios": []
-                }
+                            # ─── Reagentes utilizados com link ───
+                            st.markdown("🧪 **Reagentes utilizados**:", unsafe_allow_html=True)
+                            raw = row.get("reagentes", "")
+                            if isinstance(raw, str):
+                                reag_list = [r.strip() for r in raw.split(",") if r.strip()]
+                            elif isinstance(raw, list):
+                                reag_list = raw
+                            else:
+                                reag_list = []
+                            if reag_list:
+                                aba_reag_tab = quote("🧪 CADASTRO DE REAGENTE/SOLUÇÃO", safe="")
+                                link_items = []
+                                for nome in reag_list:
+                                    nome_enc = quote(nome, safe="")
+                                    link_items.append(
+                                        f'<a href="/?aba={aba_reag_tab}&filtro_reagente={nome_enc}" '
+                                        f'style="color:#4da6ff; text-decoration:none;">{nome}</a>'
+                                    )
+                                st.markdown(", ".join(link_items), unsafe_allow_html=True)
+                            else:
+                                st.markdown("Nenhum reagente listado.")
 
-                st.session_state.dados = pd.concat(
-                    [st.session_state.dados, pd.DataFrame([novo])],
-                    ignore_index=True
-                )
-                st.success("✅ Protocolo cadastrado com sucesso!")
+                            # Referência
+                            ref = row.get("referencia", {})
+                            st.write(
+                                f"🔗 **Referência**: {ref.get('autor','')}, "
+                                f"{ref.get('ano','')}, DOI: {ref.get('doi','')}, "
+                                f"[Link]({ref.get('link','')})"
+                            )
 
-    with aba_reagente:
-        with st.form("form_reagente"):
-            nome_sol    = st.text_input("Nome da Solução/Reagente")
-            col1, col2, col3 = st.columns([2,2,2])
-            with col1:
-                comp      = st.text_input("Componente")
-            with col2:
-                conc      = st.text_input("Concentração")
-            with col3:
-                unidade   = st.selectbox("Unidade", ["%","mL","µL","mg/mL","g/L","OUTRO"])
+                            # Comentários
+                            st.markdown("### 💬 Comentários")
+                            comentarios = row.get("comentarios", [])
+                            if not isinstance(comentarios, list):
+                                comentarios = []
+                            for c in comentarios:
+                                st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
-            st.markdown("### 📑 Protocolo do Reagente (PDF ou Link)")
-            st.info("Você deve **anexar o PDF** do protocolo e **colar o link externo do Drive do Laboratório**.")
-            arquivo_reagente = st.file_uploader(
-                "Anexar protocolo de preparo (PDF)",
-                type=["pdf"],
-                key="arquivo_reagente"
-            )
-            reag_link = st.text_input("Link do drive", key="reag_link")
+                            # Formulário de comentário
+                            with st.form(f"form_coment_{row['id']}"):
+                                nome = st.text_input("Seu Nome", key=f"nome_{row['id']}")
+                                lab  = st.text_input("Laboratório", key=f"lab_{row['id']}")
+                                texto= st.text_area("Comentário", key=f"coment_{row['id']}")
+                                enviar = st.form_submit_button("💬 Adicionar Comentário")
+                                if enviar and nome and texto:
+                                    novo_comentario = {"nome": nome, "lab": lab, "texto": texto}
+                                    for i in range(len(st.session_state.dados)):
+                                        if st.session_state.dados.at[i, "id"] == row["id"]:
+                                            st.session_state.dados.at[i, "comentarios"].append(novo_comentario)
+                                            st.success("Comentário adicionado!")
+                                            st.rerun()  # substitui st.experimental_rerun()
 
-            validade_reag = st.date_input("Validade da Solução")
-            responsavel   = st.text_input("Responsável pelo Preparo")
-            local         = st.text_input("Armazenamento/Localização")
+    with col_side:
+        st.markdown("### 🕘 Atividades Recentes")
+        recentes = df.sort_values("data", ascending=False).head(6)
+        for _, rec in recentes.iterrows():
+            st.markdown(f"""
+                <div style='border-left:3px solid #4da6ff; padding-left:10px; margin-bottom:15px;'>
+                    <div style='font-size:13px;'><b>{rec['autor']}</b></div>
+                    <div style='font-size:12px;'>📄 <a href='#{quote(rec["nome"])}' style='color:#4da6ff;'>{rec["nome"]}</a></div>
+                    <div style='font-size:11px;color:#999'>{rec['data']} | ID: {rec['id']}</div>
+                </div>
+            """, unsafe_allow_html=True)
 
-            st.markdown("### 📎 Anexos Adicionais")
-            st.file_uploader(
-                "Anexar outros arquivos (WORD, imagens, .csv etc.)",
-                type=["pdf","png","jpg","jpeg","docx","txt","xlsx","csv"],
-                key="anexos_adicionais_reagente"
-            )
-
-            enviar = st.form_submit_button("💾 Salvar Reagente/Solução")
-            if enviar:
-                bytes_reag = None
-                nome_reag  = None
-                if arquivo_reagente:
-                    bytes_reag = arquivo_reagente.read()
-                    nome_reag  = arquivo_reagente.name
-
-                link_reag = reag_link.strip() or None
-
-                novo_reagente = {
-                    "nome": nome_sol.upper(),
-                    "componentes": f"{comp.upper()} – {conc.upper()} {unidade}",
-                    "preparo": "",
-                    "validade": validade_reag.strftime("%Y-%m-%d"),
-                    "responsavel": responsavel.upper(),
-                    "local": local.upper(),
-                    "arquivo_nome": nome_reag,
-                    "arquivo_bytes": bytes_reag,
-                    "arquivo_link": link_reag
-                }
-
-                st.session_state.reagentes = pd.concat(
-                    [st.session_state.reagentes, pd.DataFrame([novo_reagente])],
-                    ignore_index=True
-                )
-                st.success("✅ Reagente/Solução cadastrada!")
+if __name__ == "__main__":
+    exibir_protocolos()
