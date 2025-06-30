@@ -24,6 +24,7 @@ def exibir_protocolos():
         st.info("Nenhum protocolo cadastrado ainda.")
         return
 
+    # Excluir protocolos de reagentes (caso esteja usando mesma tabela)
     df = df[df["categoria"] != "🧪 Protocolo de Reagentes/Soluções"]
 
     st.title("🔬 LabTrack: Plataforma de Controle de Versionamento de Protocolos")
@@ -51,22 +52,26 @@ def exibir_protocolos():
 
                     with st.container():
                         st.markdown(f"""
-                            <div style='border:1px solid #444; border-radius:10px; padding:10px; margin-bottom:10px; background-color:#111;'>
+                            <div style='border:1px solid #444; border-radius:10px; 
+                                        padding:10px; margin-bottom:10px; background-color:#111;'>
                                 <strong>📄 {row['nome']}</strong><br>
                                 <span style='font-size:13px;'>Versão {row['versao']} • {row['data']}</span><br>
-                                <a href='#' style='color:#33aaff;' onclick="window.location.reload()">{''}</a>
+                            </div>
                         """, unsafe_allow_html=True)
 
                         if st.button("🔍 Ver Detalhes", key=row["id"]):
                             st.session_state[expand_key] = not st.session_state[expand_key]
 
                         if st.session_state[expand_key]:
-                            # PDF
+                            # PDF do protocolo
                             if row.get("arquivo_bytes"):
                                 pdf_path = f"/tmp/{row['arquivo_nome']}"
                                 with open(pdf_path, "wb") as f:
                                     f.write(row["arquivo_bytes"])
-                                st.markdown(f"[📎 Clique aqui para visualizar o PDF do protocolo]({pdf_path})", unsafe_allow_html=True)
+                                st.markdown(
+                                    f"[📎 Clique aqui para visualizar o PDF do protocolo]({pdf_path})",
+                                    unsafe_allow_html=True
+                                )
                             else:
                                 st.info("Nenhum PDF anexado.")
 
@@ -75,8 +80,30 @@ def exibir_protocolos():
                             st.write(f"👤 **Autor**: {row['autor']} ({row['email']})")
                             st.write(f"🏢 **Departamento**: {row['departamento']} | **Cargo**: {row['cargo']}")
                             st.write(f"📅 **Criado em**: {row['data']} | **Validade**: {row['validade']}")
-                            st.write(f"🧪 **Reagentes utilizados**: {row['reagentes']}")
-                            st.write(f"🔗 **Referência**: {row['referencia']['autor']}, {row['referencia']['ano']}, DOI: {row['referencia']['doi']}, [Link]({row['referencia']['link']})")
+
+                            # ▶️ Reagentes com links clicáveis
+                            st.markdown("🧪 **Reagentes utilizados**:", unsafe_allow_html=True)
+                            if isinstance(row["reagentes"], str):
+                                try:
+                                    reag_list = eval(row["reagentes"])
+                                    links = []
+                                    for r in reag_list:
+                                        encoded = quote(r)
+                                        links.append(
+                                            f"[{r}](?aba=🧬 Lista de Reagentes&filtro_reagente={encoded})"
+                                        )
+                                    st.markdown(", ".join(links), unsafe_allow_html=True)
+                                except Exception:
+                                    st.markdown(row["reagentes"])
+                            else:
+                                st.markdown("Nenhum reagente listado.")
+
+                            # Referência
+                            st.write(
+                                f"🔗 **Referência**: {row['referencia']['autor']}, "
+                                f"{row['referencia']['ano']}, DOI: {row['referencia']['doi']}, "
+                                f"[Link]({row['referencia']['link']})"
+                            )
 
                             # Comentários
                             st.markdown("### 💬 Comentários")
@@ -98,8 +125,6 @@ def exibir_protocolos():
                                             st.session_state.dados.at[i, "comentarios"].append(novo_comentario)
                                             st.success("Comentário adicionado!")
                                             st.experimental_rerun()
-
-                        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_side:
         st.markdown("### 🕘 Atividades Recentes")
