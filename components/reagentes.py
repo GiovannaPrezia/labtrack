@@ -77,7 +77,6 @@ def exibir_reagentes():
                 arquivo_bytes = r.get("arquivo_bytes")
                 arquivo_nome  = r.get("arquivo_nome")
                 if arquivo_bytes:
-                    # Se for string base64 ou bytes
                     if isinstance(arquivo_bytes, str):
                         b64 = arquivo_bytes
                     else:
@@ -107,4 +106,5 @@ def exibir_reagentes():
                             if 0 <= i_real < len(st.session_state.reagentes):
                                 st.session_state.reagentes[i_real].setdefault("comentarios", []).append(novo)
                                 st.success("Comentário adicionado!")
-                                st.experimental_rerun()
+                                st.rerun()  # substitui experimental_rerun
+
