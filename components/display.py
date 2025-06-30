@@ -7,14 +7,13 @@ import json
 def carregar_protocolos_demo():
     try:
         demo_path = Path("demo_display/protocolos_demo.json")
-        with demo_path.open("r", encoding="utf-8") as f:
-            return pd.DataFrame(json.load(f))
+        return pd.DataFrame(json.load(demo_path.open("r", encoding="utf-8")))
     except Exception as e:
         st.warning(f"Erro ao carregar protocolos demo: {e}")
         return pd.DataFrame()
 
 def exibir_protocolos():
-    # Carrega dados demo se necessário
+    # Carrega os protocolos
     if "dados" not in st.session_state or st.session_state.dados.empty:
         st.session_state.dados = carregar_protocolos_demo()
     df = st.session_state.dados
@@ -22,7 +21,6 @@ def exibir_protocolos():
         st.info("Nenhum protocolo cadastrado.")
         return
 
-    # Filtra para não mostrar protocolos de reagentes
     df = df[df["categoria"] != "🧪 Protocolo de Reagentes/Soluções"]
 
     st.title("🔬 LabTrack: Plataforma de Controle de Versionamento de Protocolos")
@@ -31,18 +29,18 @@ def exibir_protocolos():
         df = df[df["nome"].str.contains(termo, case=False, na=False)]
 
     col_main, col_side = st.columns([4, 1.5])
+    # codifica a aba para query param
+    aba_enc = quote("🧬 Lista de Reagentes", safe="")
+
     with col_main:
         for grupo in df["grupo"].dropna().unique():
             st.markdown(f"### 🧬 {grupo}")
-            gdf = df[df["grupo"] == grupo]
-            for cat in gdf["categoria"].dropna().unique():
-                st.markdown(f"#### 📁 {cat}")
-                cdf = gdf[gdf["categoria"] == cat]
-
-                for _, row in cdf.iterrows():
-                    det_key = f"det_{row['id']}"
-                    if det_key not in st.session_state:
-                        st.session_state[det_key] = False
+            for categoria in df[df["grupo"] == grupo]["categoria"].dropna().unique():
+                st.markdown(f"#### 📁 {categoria}")
+                for _, row in df[(df["grupo"] == grupo) & (df["categoria"] == categoria)].iterrows():
+                    key = f"det_{row['id']}"
+                    if key not in st.session_state:
+                        st.session_state[key] = False
 
                     st.markdown(
                         f"<div style='border:1px solid #444; border-radius:10px;"
@@ -54,10 +52,10 @@ def exibir_protocolos():
                     )
 
                     if st.button("🔍 Ver Detalhes", key=row["id"]):
-                        st.session_state[det_key] = not st.session_state[det_key]
+                        st.session_state[key] = not st.session_state[key]
 
-                    if st.session_state[det_key]:
-                        # PDF
+                    if st.session_state[key]:
+                        # PDF ou placeholder
                         if row.get("arquivo_bytes"):
                             tmp = f"/tmp/{row['arquivo_nome']}"
                             with open(tmp, "wb") as f:
@@ -72,7 +70,7 @@ def exibir_protocolos():
                         st.write(f"🏢 **Departamento**: {row['departamento']} | **Cargo**: {row['cargo']}")
                         st.write(f"📅 **Criado em**: {row['data']} | **Validade**: {row['validade']}")
 
-                        # REAGENTES UTILIZADOS: botões que redirecionam
+                        # Reagentes utilizados como botões
                         st.markdown("🧪 **Reagentes utilizados**:", unsafe_allow_html=True)
                         raw = row.get("reagentes", "")
                         if isinstance(raw, str):
@@ -87,12 +85,10 @@ def exibir_protocolos():
 
                         if reag_list:
                             for nome in reag_list:
-                                # ao clicar, seta os query_params e recarrega na aba reagentes
-                                if st.button(f"➡️ {nome}", key=f"link_{row['id']}_{nome}"):
-                                    st.experimental_set_query_params(
-                                        aba="🧬 Lista de Reagentes",
-                                        filtro_reagente=nome
-                                    )
+                                if st.button(f"➡️ {nome}", key=f"btn_{row['id']}_{nome}"):
+                                    # set only via st.query_params, não misturar experimental_set
+                                    st.query_params["aba"] = "🧬 Lista de Reagentes"
+                                    st.query_params["filtro_reagente"] = nome
                                     st.experimental_rerun()
                         else:
                             st.markdown("Nenhum reagente listado.")
@@ -107,10 +103,7 @@ def exibir_protocolos():
 
                         # Comentários
                         st.markdown("### 💬 Comentários")
-                        comentarios = row.get("comentarios", [])
-                        if not isinstance(comentarios, list):
-                            comentarios = []
-                        for c in comentarios:
+                        for c in row.get("comentarios", []):
                             st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
 
                         # Form comentário
@@ -118,10 +111,23 @@ def exibir_protocolos():
                             n = st.text_input("Seu Nome", key=f"n_{row['id']}")
                             l = st.text_input("Laboratório", key=f"l_{row['id']}")
                             t = st.text_area("Comentário", key=f"t_{row['id']}")
-                            ok = st.form_submit_button("💬 Adicionar Comentário")
-                            if ok and n and t:
-                                novo = {"nome": n, "lab": l, "texto": t}
+                            if st.form_submit_button("💬 Adicionar Comentário") and n and t:
+                                new = {"nome": n, "lab": l, "texto": t}
                                 for i in range(len(st.session_state.dados)):
                                     if st.session_state.dados.at[i, "id"] == row["id"]:
-                                        st.session_state.dados.at[i, "comentarios"].append(novo)
-                                        st.succes
+                                        st.session_state.dados.at[i, "comentarios"].append(new)
+                                        st.success("Comentário adicionado!")
+                                        st.experimental_rerun()
+
+    with col_side:
+        st.markdown("### 🕘 Atividades Recentes")
+        for _, r in df.sort_values("data", ascending=False).head(6).iterrows():
+            st.markdown(
+                f"<div style='border-left:3px solid #4da6ff; padding-left:10px; margin-bottom:15px;'>"
+                f"<div style='font-size:13px;'><b>{r['autor']}</b></div>"
+                f"<div style='font-size:12px;'>📄 <a href='#{quote(r['nome'], safe='')}' "
+                f"style='color:#4da6ff;'>{r['nome']}</a></div>"
+                f"<div style='font-size:11px;color:#999'>{r['data']} | ID: {r['id']}</div>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
