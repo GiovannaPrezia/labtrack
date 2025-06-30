@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import json
 from components import forms, display, reagentes, export
 
 st.set_page_config(page_title="Controle de Protocolos", page_icon="🧪", layout="wide")
@@ -9,13 +10,15 @@ if "dados" not in st.session_state:
     try:
         st.session_state.dados = pd.read_csv("data/protocolos.csv")
     except FileNotFoundError:
-        st.session_state.dados = pd.DataFrame()
+        with open("demo_display/protocolos_demo.json") as f:
+            st.session_state.dados = pd.DataFrame(json.load(f))
 
 if "reagentes" not in st.session_state:
     try:
         st.session_state.reagentes = pd.read_csv("data/reagentes.csv")
     except FileNotFoundError:
-        st.session_state.reagentes = pd.DataFrame()
+        with open("demo_display/reagentes_demo.json") as f:
+            st.session_state.reagentes = pd.DataFrame(json.load(f))
 
 # Menu lateral
 menu = st.sidebar.radio("Menu", [
