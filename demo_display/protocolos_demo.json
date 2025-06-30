@@ -1,30 +1,98 @@
 [
   {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "nome": "Extração de RNA",
-    "grupo": "Biologia Molecular",
-    "categoria": "Extração",
+    "id": "demo01",
+    "nome": "ISOLAMENTO DE RNA TOTAL",
+    "grupo": "BIOCEL",
+    "categoria": "Extração de RNA",
     "versao": "1.0",
-    "data": "2025-06-01",
-    "validade": "2026-06-01",
-    "autor": "Dra. Maria Silva",
-    "email": "maria.silva@lab.com",
-    "departamento": "Genética",
-    "cargo": "Pesquisadora",
-    "reagentes": ["TRIzol", "Etanol 70%", "Chloroform"],
-    "arquivo_nome": "extracao_rna.pdf",
+    "data": "2024-06-01",
+    "validade": "2025-06-01",
+    "autor": "DRA. ANA PAULA",
+    "email": "ana.paula@lab.com",
+    "departamento": "BIOLOGIA",
+    "cargo": "PESQUISADORA",
+    "reagentes": "TRIzol, Clorofórmio",
+    "arquivo_nome": "isolamento_rna.pdf",
     "arquivo_bytes": null,
-    "referencia_autor": "Chomczynski & Sacchi",
-    "referencia_ano": "1987",
-    "referencia_doi": "https://doi.org/10.1006/abio.1987.9999",
-    "comentario_nome": "João",
-    "comentario_lab": "LabRNA",
-    "comentario_texto": "Funcionou bem com células HepG2.",
-    "historico": [
-      {
-        "acao": "criado",
-        "data": "2025-06-01T10:00:00"
-      }
-    ]
+    "historico": [],
+    "referencia": {
+      "autor": "Chomczynski",
+      "ano": "1987",
+      "doi": "10.1016/0003-2697(87)90021-2",
+      "link": "https://doi.org/10.1016/0003-2697(87)90021-2"
+    },
+    "comentarios": []
+  },
+  {
+    "id": "demo02",
+    "nome": "EXTRAÇÃO DE DNA GENÔMICO",
+    "grupo": "GENÉTICA MOLECULAR",
+    "categoria": "Extração de DNA",
+    "versao": "2.1",
+    "data": "2023-11-15",
+    "validade": "2025-11-15",
+    "autor": "DR. CARLOS EDUARDO",
+    "email": "carlos.e@labgen.com",
+    "departamento": "GENÉTICA",
+    "cargo": "COORDENADOR",
+    "reagentes": "EDTA, Proteinase K",
+    "arquivo_nome": "extracao_dna.pdf",
+    "arquivo_bytes": null,
+    "historico": [],
+    "referencia": {
+      "autor": "Miller",
+      "ano": "1988",
+      "doi": "10.1093/nar/16.3.1215",
+      "link": "https://doi.org/10.1093/nar/16.3.1215"
+    },
+    "comentarios": []
+  },
+  {
+    "id": "demo03",
+    "nome": "CULTIVO DE CÉLULAS HELA",
+    "grupo": "CULTURA CELULAR",
+    "categoria": "Cultivo Celular",
+    "versao": "1.3",
+    "data": "2022-03-10",
+    "validade": "2025-03-10",
+    "autor": "DRA. LUIZA GOMES",
+    "email": "luiza.gomes@cultura.org",
+    "departamento": "CULTURA CELULAR",
+    "cargo": "TÉCNICA",
+    "reagentes": "DMEM, FBS, Penicilina",
+    "arquivo_nome": "cultivo_hela.pdf",
+    "arquivo_bytes": null,
+    "historico": [],
+    "referencia": {
+      "autor": "ATCC",
+      "ano": "2020",
+      "doi": "",
+      "link": "https://www.atcc.org/products/ccl-2"
+    },
+    "comentarios": []
+  },
+  {
+    "id": "demo04",
+    "nome": "DIFERENCIAÇÃO DE CÉLULAS-TRONCO",
+    "grupo": "BIOLOGIA CELULAR",
+    "categoria": "Diferenciação Celular",
+    "versao": "0.9",
+    "data": "2023-01-01",
+    "validade": "2024-12-31",
+    "autor": "PROF. RICARDO MORAES",
+    "email": "ricardo.m@usp.br",
+    "departamento": "BIOLOGIA CELULAR",
+    "cargo": "DOCENTE",
+    "reagentes": "B27, FGF, EGF",
+    "arquivo_nome": "diferenciacao_tronco.pdf",
+    "arquivo_bytes": null,
+    "historico": [],
+    "referencia": {
+      "autor": "Takahashi & Yamanaka",
+      "ano": "2006",
+      "doi": "10.1016/j.cell.2006.07.024",
+      "link": "https://doi.org/10.1016/j.cell.2006.07.024"
+    },
+    "comentarios": []
   }
 ]
