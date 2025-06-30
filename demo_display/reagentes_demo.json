@@ -1,0 +1,17 @@
+[
+  {
+    "nome": "TRIzol",
+    "tipo": "Reagente",
+    "localizacao": "Freezer -80ºC"
+  },
+  {
+    "nome": "Etanol 70%",
+    "tipo": "Solução",
+    "localizacao": "Prateleira B - bancada 2"
+  },
+  {
+    "nome": "Chloroform",
+    "tipo": "Reagente",
+    "localizacao": "Capela química"
+  }
+]
