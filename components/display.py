@@ -35,9 +35,6 @@ def exibir_protocolos():
 
     col_main, col_side = st.columns([4, 1.5])
 
-    # Aba de reagentes para link
-    aba_reag_tab = quote("🧪 CADASTRO DE REAGENTE/SOLUÇÃO", safe="")
-
     with col_main:
         for grupo in df["grupo"].dropna().unique():
             st.markdown(f"### 🧬 {grupo}")
@@ -92,6 +89,7 @@ def exibir_protocolos():
                             else:
                                 reag_list = []
                             if reag_list:
+                                aba_reag_tab = quote("🧪 CADASTRO DE REAGENTE/SOLUÇÃO", safe="")
                                 link_items = []
                                 for nome in reag_list:
                                     nome_enc = quote(nome, safe="")
@@ -131,7 +129,7 @@ def exibir_protocolos():
                                         if st.session_state.dados.at[i, "id"] == row["id"]:
                                             st.session_state.dados.at[i, "comentarios"].append(novo_comentario)
                                             st.success("Comentário adicionado!")
-                                            st.experimental_rerun()
+                                            st.rerun()  # substitui st.experimental_rerun()
 
     with col_side:
         st.markdown("### 🕘 Atividades Recentes")
