@@ -133,13 +133,13 @@ def exibir_formulario():
                 unidade= st.selectbox("Unidade", ["%", "mL", "µL", "mg/mL", "g/L", "OUTRO"])
 
             st.markdown("### 📑 Protocolo do Reagente (PDF ou link externo)")
-            st.info("Você pode anexar um PDF ou colar um link para o protocolo.")
+            st.info("Você deve anexar o PDF do protocolo e colar um link do Drive.")
             arquivo_reagente = st.file_uploader(
                 "Anexar protocolo de preparo (PDF)",
                 type=["pdf"],
                 key="arquivo_reagente"
             )
-            reag_link = st.text_input("Ou cole aqui o link externo do PDF", key="reag_link")
+            reag_link = st.text_input("Cole aqui o link externo do ProtocoloF", key="reag_link")
 
             validade_reag = st.date_input("Validade da Solução")
             responsavel   = st.text_input("Responsável pelo Preparo")
