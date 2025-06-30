@@ -1,155 +1,139 @@
 import streamlit as st
 import pandas as pd
-from urllib.parse import quote
-from datetime import datetime
-from pathlib import Path
+import base64
 import json
+from urllib.parse import quote
+from pathlib import Path
 
+# —————————————————————————————————————————————
+# Função para carregar os demos iniciais (se existir arquivo JSON)
+# —————————————————————————————————————————————
+@st.cache_data
 def carregar_protocolos_demo():
-    try:
-        demo_path = Path("demo_display/protocolos_demo.json")
-        with demo_path.open("r", encoding="utf-8") as f:
-            return pd.DataFrame(json.load(f))
-    except Exception as e:
-        st.warning(f"Erro ao carregar protocolos demo: {e}")
-        return pd.DataFrame()
+    demo_path = Path("demo_display/protocolos_demo.json")
+    if demo_path.exists():
+        return pd.DataFrame(json.loads(demo_path.read_text(encoding="utf-8")))
+    return pd.DataFrame()
 
+# —————————————————————————————————————————————
+# Form de cadastro de protocolo
+# —————————————————————————————————————————————
+def form_cadastro():
+    st.sidebar.header("➕ Cadastrar Protocolo Novo")
+    with st.sidebar.form("form_cadastro"):
+        nome     = st.text_input("Nome do Protocolo")
+        grupo    = st.text_input("Grupo")
+        categoria= st.text_input("Categoria")
+        versao   = st.text_input("Versão")
+        data     = st.date_input("Data")
+        validade = st.date_input("Validade")
+        autor    = st.text_input("Autor")
+        email    = st.text_input("Email do Autor")
+        depto    = st.text_input("Departamento")
+        cargo    = st.text_input("Cargo")
+        reagentes= st.text_input("Reagentes (vírgula-separated)")
+        referencia_autor = st.text_input("Ref: Autor")
+        referencia_ano   = st.text_input("Ref: Ano")
+        referencia_doi   = st.text_input("Ref: DOI")
+        referencia_link  = st.text_input("Ref: Link")
+        # upload de PDF OU link externo
+        pdf_file = st.file_uploader("Anexar PDF", type=["pdf"])
+        pdf_link = st.text_input("Ou cole aqui um link externo para o PDF")
+
+        ok = st.form_submit_button("💾 Salvar")
+        if ok:
+            # gera um ID simples
+            novo_id = f"proto{len(st.session_state.dados)+1:03d}"
+            # bytes do PDF
+            arquivo_bytes = None
+            if pdf_file is not None:
+                arquivo_bytes = base64.b64encode(pdf_file.read()).decode()
+            # decide qual link exibir
+            arquivo_link = pdf_link if pdf_link else None
+
+            novo = {
+                "id": novo_id,
+                "nome": nome,
+                "grupo": grupo,
+                "categoria": categoria,
+                "versao": versao,
+                "data": str(data),
+                "validade": str(validade),
+                "autor": autor,
+                "email": email,
+                "departamento": depto,
+                "cargo": cargo,
+                "reagentes": reagentes,
+                "arquivo_nome": pdf_file.name if pdf_file else "",
+                "arquivo_bytes": arquivo_bytes,
+                "arquivo_link": arquivo_link,
+                "historico": [],
+                "referencia": {
+                    "autor": referencia_autor,
+                    "ano": referencia_ano,
+                    "doi": referencia_doi,
+                    "link": referencia_link
+                },
+                "comentarios": []
+            }
+
+            # adiciona ao DataFrame em memória
+            st.session_state.dados = pd.concat([st.session_state.dados, pd.DataFrame([novo])], ignore_index=True)
+            st.success(f"Protocolo '{nome}' cadastrado com sucesso!")
+
+# —————————————————————————————————————————————
+# Exibição dos protocolos (com PDF e link)
+# —————————————————————————————————————————————
 def exibir_protocolos():
-    # Carrega dados demo se necessário
-    if "dados" not in st.session_state or st.session_state.dados.empty:
-        st.session_state.dados = carregar_protocolos_demo()
     df = st.session_state.dados
     if df.empty:
         st.info("Nenhum protocolo cadastrado.")
         return
 
-    # Filtra protocolos de reagentes, se estiverem na mesma tabela
-    df = df[df["categoria"] != "🧪 Protocolo de Reagentes/Soluções"]
-
-    st.title("🔬 LabTrack: Plataforma de Controle de Versionamento de Protocolos")
-    st.markdown("## Protocolos Cadastrados")
-
-    termo = st.text_input("🔍 Buscar por nome do protocolo")
+    st.title("🔬 LabTrack: Protocolos Cadastrados")
+    termo = st.text_input("🔍 Buscar por nome")
     if termo:
         df = df[df["nome"].str.contains(termo, case=False, na=False)]
 
-    col_main, col_side = st.columns([4, 1.5])
+    for _, row in df.iterrows():
+        with st.container():
+            st.markdown(f"---\n### 📄 {row['nome']}  \n"
+                        f"**Versão** {row['versao']} • **Data** {row['data']}")
+            # — PDF embutido + download
+            if pd.notna(row.get("arquivo_bytes")):
+                pdf_bytes = base64.b64decode(row["arquivo_bytes"])
+                # botão de download
+                st.download_button(
+                    "📥 Baixar PDF",
+                    data=pdf_bytes,
+                    file_name=row["arquivo_nome"],
+                    mime="application/pdf"
+                )
+                # embed inline
+                b64 = row["arquivo_bytes"]
+                iframe = (
+                    f'<iframe src="data:application/pdf;base64,{b64}" '
+                    f'width="100%" height="500px" type="application/pdf"></iframe>'
+                )
+                st.components.v1.html(iframe, height=500)
+            # — Link externo para PDF (Drive, etc.)
+            elif pd.notna(row.get("arquivo_link")):
+                st.markdown(f"[📂 Abrir PDF Externo]({row['arquivo_link']})")
+            else:
+                st.info("Nenhum PDF anexado nem link externo.")
 
-    # percent-encode do nome da aba
-    aba_enc = quote("🧬 Lista de Reagentes", safe="")
+            # demais metadados
+            st.write(f"👤 **Autor**: {row['autor']} ({row['email']})")
+            st.write(f"🏢 **Depto.**: {row['departamento']} | **Cargo**: {row['cargo']}")
+            st.write(f"🧪 **Reagentes**: {row['reagentes']}")
+            ref = row["referencia"]
+            st.write(f"🔗 **Referência**: {ref['autor']}, {ref['ano']}, DOI {ref['doi']}, [Link]({ref['link']})")
 
-    with col_main:
-        for grupo in df["grupo"].dropna().unique():
-            st.markdown(f"### 🧬 {grupo}")
-            gdf = df[df["grupo"] == grupo]
-            for cat in gdf["categoria"].dropna().unique():
-                st.markdown(f"#### 📁 {cat}")
-                cdf = gdf[gdf["categoria"] == cat]
-                for _, row in cdf.iterrows():
-                    key = f"detalhes_{row['id']}"
-                    if key not in st.session_state:
-                        st.session_state[key] = False
+# —————————————————————————————————————————————
+# Main
+# —————————————————————————————————————————————
+if "dados" not in st.session_state:
+    st.session_state.dados = carregar_protocolos_demo()
 
-                    # cartão
-                    st.markdown(f"""
-                        <div style='border:1px solid #444; border-radius:10px;
-                                    padding:10px; margin-bottom:10px; background-color:#111;'>
-                            <strong>📄 {row['nome']}</strong><br>
-                            <span style='font-size:13px;'>Versão {row['versao']} • {row['data']}</span>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-                    if st.button("🔍 Ver Detalhes", key=row["id"]):
-                        st.session_state[key] = not st.session_state[key]
-
-                    if st.session_state[key]:
-                        # PDF local
-                        if row.get("arquivo_bytes"):
-                            tmp = f"/tmp/{row['arquivo_nome']}"
-                            with open(tmp, "wb") as f:
-                                f.write(row["arquivo_bytes"])
-                            st.markdown(f"[📎 Visualizar PDF]({tmp})", unsafe_allow_html=True)
-                        else:
-                            st.info("Nenhum PDF anexado")
-
-                        # Link para Drive
-                        if pd.notna(row.get("arquivo_link", None)):
-                            st.markdown(f"[📂 Abrir no Drive]({row['arquivo_link']})", unsafe_allow_html=True)
-
-                        # Info gerais
-                        st.markdown("### 📦 Informações Gerais")
-                        st.write(f"👤 **Autor**: {row['autor']} ({row['email']})")
-                        st.write(f"🏢 **Departamento**: {row['departamento']} | **Cargo**: {row['cargo']}")
-                        st.write(f"📅 **Criado em**: {row['data']} | **Validade**: {row['validade']}")
-
-                        # ─── Reagentes utilizados ───
-                        st.markdown("🧪 **Reagentes utilizados**:", unsafe_allow_html=True)
-
-                        raw = row.get("reagentes", "")
-                        if isinstance(raw, str):
-                            try:
-                                reag_list = eval(raw)
-                            except:
-                                reag_list = [r.strip() for r in raw.split(",") if r.strip()]
-                        elif isinstance(raw, list):
-                            reag_list = raw
-                        else:
-                            reag_list = []
-
-                        if reag_list:
-                            links = []
-                            for nome in reag_list:
-                                nome_enc = quote(nome, safe="")
-                                links.append(
-                                    f'<a href="/?aba={aba_enc}&filtro_reagente={nome_enc}" '
-                                    f'style="color:#4da6ff; text-decoration:none;">'
-                                    f'{nome}</a>'
-                                )
-                            st.markdown(", ".join(links), unsafe_allow_html=True)
-                        else:
-                            st.markdown("Nenhum reagente listado.")
-
-                        # Referência
-                        ref = row.get("referencia", {})
-                        st.write(
-                            f"🔗 **Referência**: {ref.get('autor','')}, "
-                            f"{ref.get('ano','')}, DOI: {ref.get('doi','')}, "
-                            f"[Link]({ref.get('link','')})"
-                        )
-
-                        # Comentários
-                        st.markdown("### 💬 Comentários")
-                        comentarios = row.get("comentarios", [])
-                        if not isinstance(comentarios, list):
-                            comentarios = []
-                        for c in comentarios:
-                            st.markdown(f"🗨️ **{c['nome']}** ({c['lab']}): {c['texto']}")
-
-                        # Form comentário
-                        with st.form(f"form_coment_{row['id']}"):
-                            n = st.text_input("Seu Nome", key=f"nome_{row['id']}")
-                            l = st.text_input("Laboratório", key=f"lab_{row['id']}")
-                            t = st.text_area("Comentário", key=f"coment_{row['id']}")
-                            ok = st.form_submit_button("💬 Adicionar Comentário")
-                            if ok and n and t:
-                                novo = {"nome": n, "lab": l, "texto": t}
-                                for i in range(len(st.session_state.dados)):
-                                    if st.session_state.dados.at[i, "id"] == row["id"]:
-                                        st.session_state.dados.at[i, "comentarios"].append(novo)
-                                        st.success("Comentário adicionado!")
-                                        st.experimental_rerun()
-
-    with col_side:
-        st.markdown("### 🕘 Atividades Recentes")
-        rec = df.sort_values("data", ascending=False).head(6)
-        for _, r in rec.iterrows():
-            st.markdown(f"""
-                <div style='border-left:3px solid #4da6ff; padding-left:10px; margin-bottom:15px;'>
-                    <div style='font-size:13px;'><b>{r['autor']}</b></div>
-                    <div style='font-size:12px;'>📄 <a href='#{quote(r["nome"])}' style='color:#4da6ff;'>{r['nome']}</a></div>
-                    <div style='font-size:11px;color:#999'>{r['data']} | ID: {r['id']}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-if __name__ == "__main__":
-    exibir_protocolos()
+form_cadastro()
+exibir_protocolos()
