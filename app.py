@@ -22,14 +22,14 @@ if "reagentes" not in st.session_state:
 
 # Menu lateral
 menu = st.sidebar.radio("Menu", [
-    "➕ Cadastrar Novo Protocolo",
+    "📋 Cadastrar Novo Protocolo",
     "📄 Protocolos Laboratoriais",
     "🧬 Lista de Reagentes",
     "📤 Exportar / Backups"
 ])
 
 # Navegação
-if menu == "➕ Cadastrar Novo Protocolo":
+if menu == "📋 Cadastrar Novo Protocolo":
     forms.exibir_formulario()
 elif menu == "📄 Protocolos Laboratoriais":
     display.exibir_protocolos()
