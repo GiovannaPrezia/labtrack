@@ -7,6 +7,8 @@ def exibir_formulario():
     st.header("Cadastro de Novo Protocolo")
 
     with st.form("form_protocolo"):
+
+        # Dados gerais
         nome = st.text_input("Nome do Protocolo")
         grupo = st.text_input("Grupo Responsável")
         categoria = st.selectbox("Categoria", ["Extração", "Cultivo Celular", "PCR", "Western Blot", "Outros"])
@@ -17,19 +19,21 @@ def exibir_formulario():
         email = st.text_input("Email para Contato")
         departamento = st.text_input("Departamento")
         cargo = st.text_input("Cargo")
-        reagentes = st.multiselect("Reagentes Utilizados", st.session_state.reagentes["nome"].tolist() if not st.session_state.reagentes.empty else [])
-        
+        reagentes = st.multiselect(
+            "Reagentes Utilizados",
+            st.session_state.reagentes["nome"].tolist() if not st.session_state.reagentes.empty else []
+        )
         arquivo = st.file_uploader("Anexar Protocolo (PDF ou Word)", type=["pdf", "docx"])
-        
+
         # Referência
         st.subheader("Referência")
-        ref_autor = st.text_input("Nome do Autor")
-        ref_ano = st.text_input("Ano")
-        ref_doi = st.text_input("DOI ou link")
+        ref_autor = st.text_input("Autor da Referência")
+        ref_ano = st.text_input("Ano da Referência")
+        ref_doi = st.text_input("DOI ou Link da Referência")
 
         # Comentário
         st.subheader("Comentário (opcional)")
-        comentario_nome = st.text_input("Seu nome")
+        comentario_nome = st.text_input("Seu Nome")
         comentario_lab = st.text_input("Laboratório")
         comentario_texto = st.text_area("Comentário")
 
@@ -59,5 +63,10 @@ def exibir_formulario():
                 "comentario_texto": comentario_texto,
                 "historico": [{"acao": "criado", "data": str(datetime.datetime.now())}]
             }
-            st.session_state.dados = pd.concat([st.session_state.dados, pd.DataFrame([novo])], ignore_index=True)
+
+            st.session_state.dados = pd.concat(
+                [st.session_state.dados, pd.DataFrame([novo])],
+                ignore_index=True
+            )
+
             st.success("Protocolo cadastrado com sucesso!")
