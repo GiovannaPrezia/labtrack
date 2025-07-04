@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
-from components import forms, display, reagentes, export
+from components import forms, display, reagentes, export, mapa
 
 st.set_page_config(page_title="Controle de Protocolos", page_icon="🧪", layout="wide")
 
@@ -23,6 +23,7 @@ if "reagentes" not in st.session_state:
 # Menu lateral
 menu = st.sidebar.radio("Menu", [
     "📋 Cadastrar Novo Protocolo",
+    "🗺️ Mapa do Laboratório",
     "📄 Protocolos Laboratoriais",
     "🧬 Lista de Reagentes",
     "📤 Exportar / Backups"
@@ -30,10 +31,12 @@ menu = st.sidebar.radio("Menu", [
 
 # Navegação
 if menu == "📋 Cadastrar Novo Protocolo":
-    forms.exibir_formulario()
-elif menu == "📄 Protocolos Laboratoriais":
-    display.exibir_protocolos()
-elif menu == "🧬 Lista de Reagentes":
-    reagentes.exibir_reagentes()
-elif menu == "📤 Exportar / Backups":
-    export.exportar_dados()
+     forms.exibir_formulario()
+elif menu == "🗺️ Mapa do Laboratório":   # ← captura clique
+    mapa.exibir_mapa()
+ elif menu == "📄 Protocolos Laboratoriais":
+     display.exibir_protocolos()
+ elif menu == "🧬 Lista de Reagentes":
+     reagentes.exibir_reagentes()
+ elif menu == "📤 Exportar / Backups":
+     export.exportar_dados()
