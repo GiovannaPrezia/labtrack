@@ -31,12 +31,12 @@ menu = st.sidebar.radio("Menu", [
 
 # Navegação
 if menu == "📋 Cadastrar Novo Protocolo":
-     forms.exibir_formulario()
-elif menu == "🗺️ Mapa do Laboratório":   # ← captura clique
+    forms.exibir_formulario()
+elif menu == "🗺️ Mapa do Laboratório":
     mapa.exibir_mapa()
- elif menu == "📄 Protocolos Laboratoriais":
-     display.exibir_protocolos()
- elif menu == "🧬 Lista de Reagentes":
-     reagentes.exibir_reagentes()
- elif menu == "📤 Exportar / Backups":
-     export.exportar_dados()
+elif menu == "📄 Protocolos Laboratoriais":
+    display.exibir_protocolos()
+elif menu == "🧬 Lista de Reagentes":
+    reagentes.exibir_reagentes()
+elif menu == "📤 Exportar / Backups":
+    export.exportar_dados()
